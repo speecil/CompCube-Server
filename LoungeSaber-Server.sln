@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoungeSaber-Server", "LoungeSaber-Server\LoungeSaber-Server.csproj", "{857E6319-70BB-42DF-A063-EE159BE52CDE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{857E6319-70BB-42DF-A063-EE159BE52CDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{857E6319-70BB-42DF-A063-EE159BE52CDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{857E6319-70BB-42DF-A063-EE159BE52CDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{857E6319-70BB-42DF-A063-EE159BE52CDE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

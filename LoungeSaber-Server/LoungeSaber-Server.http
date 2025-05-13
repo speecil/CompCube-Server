@@ -1,0 +1,6 @@
+@LoungeSaber_Server_HostAddress = http://localhost:5012
+
+GET {{LoungeSaber_Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
