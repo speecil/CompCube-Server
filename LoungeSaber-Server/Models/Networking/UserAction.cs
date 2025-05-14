@@ -1,16 +1,18 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace LoungeSaber_Server.Models.Networking;
 
 public class UserAction
 {
     public readonly ActionType Type;
-    public readonly string Data;
+    public readonly JObject JsonData;
     
     private UserAction(ActionType actionType, string data)
     {
         Type = actionType;
-        Data = data;
+
+        JsonData = JsonConvert.DeserializeObject<JObject>(data)!;
     }
 
     public static UserAction Parse(string json)

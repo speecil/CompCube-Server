@@ -1,15 +1,15 @@
-﻿using LoungeSaber_Server.Models;
-using LoungeSaber_Server.Models.Networking;
+﻿using LoungeSaber_Server.Models.Networking;
+using LoungeSaber_Server.SkillDivision;
 
-namespace LoungeSaber_Server.SkillDivision.TournamentRoom;
+namespace LoungeSaber_Server.MatchRoom;
 
-public class TournamentRoom
+public class MatchRoom
 {
     public readonly Division Division;
     
     public List<ConnectedUser> ConnectedUsers = [];
     
-    public TournamentRoom(Division division)
+    public MatchRoom(Division division)
     {
         Division = division;
     }
