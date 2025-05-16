@@ -1,12 +1,25 @@
-﻿using System.Text.Json.Serialization;
+﻿using Newtonsoft.Json;
 
 namespace LoungeSaber_Server.Models.Maps;
 
-public class MapDifficulty(string characteristic, string difficulty)
+public class MapDifficulty(string characteristic, string difficulty, MapDifficulty.MapCategory category)
 {
-    [JsonPropertyName("characteristic")]
-    public string Characteristic { get; set; } = characteristic;
+    [JsonProperty("characteristic")]
+    public string Characteristic { get; private set; } = characteristic;
 
-    [JsonPropertyName("name")]
-    public string Difficulty { get; set; } = difficulty;
+    [JsonProperty("name")]
+    public string Difficulty { get; private set; } = difficulty;
+
+    [JsonIgnore] public MapCategory Category { get; private set; } = category;
+    
+    public enum MapCategory
+    {
+        Speed,
+        Midspeed,
+        Acc,
+        Tech,
+        Balanced,
+        Extreme,
+        Unknown
+    }
 }

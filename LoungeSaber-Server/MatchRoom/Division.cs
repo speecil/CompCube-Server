@@ -14,14 +14,14 @@ public class Division
     public string DivisionName { get; private set; }
     public Color DivisionColor { get; private set; }
     
-    public MapDifficulty.MapTypes[] DisallowedMapTypes { get; private set; }
+    public MapDifficulty.MapCategory[] DisallowedMapTypes { get; private set; }
     
 
     [JsonIgnore]
     public readonly MatchRoom.MatchLobby DivisionLobby;
 
     // TODO: make constructor private
-    public Division(int minMMR, int maxMMR, string divisionName, Color divisionColor, MapDifficulty.MapTypes[] disallowedMapTypes)
+    public Division(int minMMR, int maxMMR, string divisionName, Color divisionColor, MapDifficulty.MapCategory[] disallowedMapTypes)
     {
         MinMMR = minMMR;
         MaxMMR = maxMMR;
@@ -32,23 +32,25 @@ public class Division
         DivisionLobby = new MatchRoom.MatchLobby(this);
     }
 
-    public List<MapDifficulty> GetRandomMaps(int amount)
+    public List<VotingMap> GetRandomMaps(int amount)
     {
+        var votingMaps = new List<VotingMap>();
+        
         var random = new Random();
-        
-        var mapList = new List<MapDifficulty>();
-        var allMaps = MapData.Instance.GetAllMaps();
-        
-        while (mapList.Count < amount)
+
+        var allMapDifficulties = MapData.Instance.GetAllIndividualDifficulties();
+
+        while (votingMaps.Count < amount)
         {
-            var selectedMap = allMaps[random.Next(allMaps.Count + 1)];
+            var map = allMapDifficulties[random.Next(allMapDifficulties.Count + 1)];
             
-            if (mapList.Contains(selectedMap)) 
-                continue;
+            if (votingMaps.Any(i => i.Hash == map.Hash)) continue;
+            if (DisallowedMapTypes.Contains(map.Category)) continue;
             
+            votingMaps.Add(map);
         }
 
-        return mapList;
+        return votingMaps;
     }
 
     public static Division Parse(string json)

@@ -22,51 +22,52 @@ public class MapData : Database
         createDBCommand.ExecuteNonQuery();
     }
 
-    public List<MapDifficulty> GetAllMaps()
+    public List<VotingMap> GetAllIndividualDifficulties()
     {
-        var getMapsQuery = _connection.CreateCommand();
-        getMapsQuery.CommandText = "SELECT * FROM mapData";
-        using var reader = getMapsQuery.ExecuteReader();
+        var command = _connection.CreateCommand();
+        command.CommandText = "SELECT * FROM mapData;";
 
-        var mapList = new List<MapDifficulty>();
-        
+        var maps = new List<VotingMap>();
+
+        using var reader = command.ExecuteReader();
+
         while (reader.Read())
         {
             var hash = reader.GetString(0);
             var difficulty = reader.GetString(1);
             var characteristic = reader.GetString(2);
-            var category = reader.GetString(3);
 
-            if (!Enum.TryParse<MapDifficulty.MapTypes>(category, out var mapCategory))
+            if (!Enum.TryParse<MapDifficulty.MapCategory>(reader.GetString(3), out var category))
             {
-                Console.WriteLine("Could not parse map category!");
-                mapCategory = MapDifficulty.MapTypes.Unknown;
+                Console.WriteLine($"Couldn't get category data for hash {hash}!");
+                category = MapDifficulty.MapCategory.Unknown;
             }
             
-            mapList.Add(new MapDifficulty(hash,difficulty, characteristic, mapCategory));
+            maps.Add(new VotingMap(hash, new MapDifficulty(characteristic, difficulty, category)));
         }
 
-        return mapList;
+        return maps;
     }
 
-    public List<MapDifficulty> GetMapsOfCategory(MapDifficulty.MapTypes mapCategory)
+    public List<Map> GetAllMaps()
     {
-        var maps = GetAllMaps();
+        var votingMaps = GetAllIndividualDifficulties();
 
-        var returnMaps = new List<MapDifficulty>();
+        var completeMaps = new List<Map>();
 
-        foreach (var map in maps)
+        foreach (var map in votingMaps)
         {
-            if (map.Category == mapCategory)
-                returnMaps.Add(map);
+            var alreadyExistingMap = completeMaps.FirstOrDefault(i => i.Hash == map.Hash);
+
+            if (alreadyExistingMap != null)
+            {
+                alreadyExistingMap.Difficulties.Add(new MapDifficulty(map.Characteristic, map.Difficulty, map.Category));
+                continue;
+            }
+            
+            completeMaps.Add(new Map(map.Hash, [new MapDifficulty(map.Characteristic, map.Difficulty, map.Category)]));
         }
 
-        return returnMaps;
-    }
-
-    public bool TryGetMapByHash(string hash, out MapDifficulty? map)
-    {
-        map = GetAllMaps().FirstOrDefault(i => i.Hash == hash);
-        return map != null;
+        return completeMaps;
     }
 }

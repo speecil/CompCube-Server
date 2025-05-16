@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using LoungeSaber_Server.Models.Maps;
+using LoungeSaber_Server.SQL;
 
 namespace LoungeSaber_Server.Models.Networking;
 
@@ -13,7 +14,7 @@ public class ConnectedUser
     public bool IsInMatch { get; private set; } = false;
     private bool ShouldContinueReadingStream { get; set; } = true;
 
-    public event Action<User, MapDifficulty>? OnUserVoteRecieved;
+    public event Action<User, VotingMap>? OnUserVoteRecieved;
     public event Action<User, int>? OnUserScorePosted;
     public event Action<User>? OnUserLeftGame;
 
@@ -41,8 +42,10 @@ public class ConnectedUser
             switch (userAction.Type)
             {
                 case UserAction.ActionType.VoteOnMap:
-                    // TODO: replace this with only map hash
-                    OnUserVoteRecieved?.Invoke(UserInfo, MapDifficulty.Parse(userAction.JsonData));
+                    if (!userAction.JsonData.TryGetValue("vote", out var voteToken))
+                        throw new Exception("Could not parse vote from client request!");
+                    
+                    OnUserVoteRecieved?.Invoke(UserInfo, voteToken.ToObject<VotingMap>()!);
                     break;
                 case UserAction.ActionType.PostScore:
                     if (!userAction.JsonData.TryGetValue("score", out var score))

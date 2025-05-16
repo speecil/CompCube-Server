@@ -14,7 +14,7 @@ public class Match
 
     private readonly Division Division;
 
-    private readonly List<MapDifficulty> mapVotes = [];
+    private readonly List<VotingMap> mapVotes = [];
 
     public event Action? MatchEnded;
 
@@ -61,7 +61,7 @@ public class Match
         UserTwo.OnUserVoteRecieved += OnUserVoteRecieved;
     }
 
-    private async void OnUserVoteRecieved(User user, MapDifficulty mapDifficultyVote)
+    private async void OnUserVoteRecieved(User user, VotingMap mapDifficultyVote)
     {
         try
         {
@@ -102,7 +102,7 @@ public class Match
         MatchEnded?.Invoke();
     }
 
-    private async Task EndVoting(MapDifficulty selectedMapDifficulty)
+    private async Task EndVoting(VotingMap selectedMapDifficulty)
     {
         var startingTime = DateTime.UtcNow.AddSeconds(20);
         

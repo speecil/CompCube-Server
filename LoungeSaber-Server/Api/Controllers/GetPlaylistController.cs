@@ -1,7 +1,9 @@
 ﻿using System.Net;
 using System.Text;
+using LoungeSaber_Server.Models.Maps;
 using LoungeSaber_Server.SQL;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace LoungeSaber_Server.Api.Controllers;
@@ -13,7 +15,7 @@ public class GetPlaylistController
     [HttpGet("all")]
     public IResult GetAllSongs()
     {
-        var playlistSongs = MapData.Instance.GetAllMaps().Select(JObject.FromObject);
+        var playlistSongs = MapData.Instance.GetAllMaps().Select(i => i.GetPlaylistMap());
         
         var playlistObject = new JObject
         {
