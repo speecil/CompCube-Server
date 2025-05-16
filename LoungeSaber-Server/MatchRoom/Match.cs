@@ -49,7 +49,7 @@ public class Match
         
         var matchCreatedAction = new ServerAction(ServerAction.ActionType.CreateMatch, new JObject
         {
-            {"opponent", JToken.FromObject(UserTwo.UserInfo) },
+            {"opponent", JObject.FromObject(UserTwo.UserInfo) },
             {"votingOptions", JArray.FromObject(votingOptions) }
         });
         await UserOne.SendServerAction(matchCreatedAction);

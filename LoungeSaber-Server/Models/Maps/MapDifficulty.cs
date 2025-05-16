@@ -1,8 +1,6 @@
-﻿using LoungeSaber_Server.Models.Maps;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
 
-namespace LoungeSaber_Server.Models;
+namespace LoungeSaber_Server.Models.Maps;
 
 public class MapDifficulty
 {
