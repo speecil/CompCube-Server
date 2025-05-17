@@ -33,7 +33,7 @@ public static class MatchRoomDirector
 
                 if (roomRequest.Type != UserAction.ActionType.Join ||
                     !roomRequest.JsonData.TryGetValue("divisionName", out var divisionName) ||
-                    !DivisionManager.GetDivisionFromName(divisionName.ToString(), out var division) || 
+                    !DivisionManager.TryGetDivisionFromName(divisionName.ToObject<string>()!, out var division) || 
                     !roomRequest.JsonData.TryGetValue("userId", out var userId))
                 {
                     client.Close();

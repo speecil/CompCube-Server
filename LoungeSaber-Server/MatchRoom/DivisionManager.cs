@@ -11,7 +11,7 @@ public static class DivisionManager
         new(1000, 2000, "Gold", new Color(211, 175, 55), [])
     ];
 
-    public static bool GetDivisionFromName(string name, out Division? value)
+    public static bool TryGetDivisionFromName(string name, out Division? value)
     {
         value = Divisions.FirstOrDefault(x => x.DivisionName == name);
         return value != null;
