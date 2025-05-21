@@ -6,6 +6,7 @@ namespace LoungeSaber_Server.Models.Networking;
 
 public class UserPacket
 {
+    [JsonProperty("PacketType")]
     public readonly ActionType Type;
     public readonly JObject JsonData;
 
@@ -21,11 +22,12 @@ public class UserPacket
         }
     }
     
-    private UserPacket(ActionType actionType, string data)
+    [JsonConstructor]
+    private UserPacket(ActionType actionType, JObject data)
     {
         Type = actionType;
 
-        JsonData = JsonConvert.DeserializeObject<JObject>(data)!;
+        JsonData = data;
     }
 
     public static UserPacket Parse(string json)

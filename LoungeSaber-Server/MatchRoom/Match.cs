@@ -52,10 +52,10 @@ public class Match
             {"opponent", JToken.FromObject(UserTwo.UserInfo) },
             {"votingOptions", JArray.FromObject(votingOptions) }
         });
-        await UserOne.SendServerAction(matchCreatedAction);
+        await UserOne.SendServerPacket(matchCreatedAction);
 
         matchCreatedAction.Data["opponent"] = JToken.FromObject(UserOne.UserInfo);
-        await UserTwo.SendServerAction(matchCreatedAction);
+        await UserTwo.SendServerPacket(matchCreatedAction);
         
         UserOne.OnUserVoteRecieved += OnUserVoteRecieved;
         UserTwo.OnUserVoteRecieved += OnUserVoteRecieved;
@@ -73,7 +73,7 @@ public class Match
 
             var nonVotingUser = votingUser.UserInfo.ID == UserOne.UserInfo.ID ? UserTwo : UserOne;
 
-            await nonVotingUser.SendServerAction(new ServerPacket(ServerPacket.ActionType.OpponentVoted, new JObject
+            await nonVotingUser.SendServerPacket(new ServerPacket(ServerPacket.ActionType.OpponentVoted, new JObject
             {
                 {"opponentVote", JToken.FromObject(mapDifficultyVote)}
             }));
@@ -140,11 +140,11 @@ public class Match
                 {"mmrChange", mmrChange}
             });
 
-            await scoreSubmitter.SendServerAction(resultsServerAction);
+            await scoreSubmitter.SendServerPacket(resultsServerAction);
 
             resultsServerAction.Data["opponentScore"] = score;
         
-            await first.SendServerAction(resultsServerAction);
+            await first.SendServerPacket(resultsServerAction);
         
             MatchEnded?.Invoke(this);
         }
@@ -163,7 +163,7 @@ public class Match
 
     private async Task SendActionToBothUsers(ServerPacket serverPacket)
     {
-        await UserOne.SendServerAction(serverPacket);
-        await UserTwo.SendServerAction(serverPacket);
+        await UserOne.SendServerPacket(serverPacket);
+        await UserTwo.SendServerPacket(serverPacket);
     }
 }

@@ -28,21 +28,25 @@ public class ConnectedUser
 
         UserName = userName;
 
-        var clientStreamReaderThread = new Thread(GetClientActionFromStream);
+        var clientStreamReaderThread = new Thread(GetClientPacketFromStream);
         clientStreamReaderThread.Start();
     }
 
-    private void GetClientActionFromStream()
+    private void GetClientPacketFromStream()
     {
         while (ShouldContinueReadingStream)
         {
+            while (!_client.GetStream().DataAvailable);
+            
             var buffer = new byte[1024];
             
-            var bufferLength = _client.GetStream().Read(buffer);
-            buffer = buffer[..bufferLength];
+            var bufferLength = _client.Client.Receive(buffer);
+            Array.Resize(ref buffer, bufferLength);
 
             var json = Encoding.UTF8.GetString(buffer);
             var userAction = UserPacket.Parse(json);
+            
+            Console.WriteLine(json);
 
             switch (userAction.Type)
             {
@@ -68,6 +72,6 @@ public class ConnectedUser
         }
     }
 
-    public async Task SendServerAction(ServerPacket packet) =>
-        await _client.GetStream().WriteAsync(Encoding.UTF8.GetBytes(packet.Serialize()));
+    public async Task SendServerPacket(ServerPacket packet) =>
+        await _client.Client.SendAsync(Encoding.UTF8.GetBytes(packet.Serialize()));
 }

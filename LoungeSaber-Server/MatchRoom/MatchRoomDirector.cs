@@ -32,7 +32,6 @@ public static class MatchRoomDirector
             while (IsStarted)
             {
                 var client = await Listener.AcceptTcpClientAsync();
-                Console.WriteLine("yep thats a client right there");
                 
                 try
                 {
@@ -40,8 +39,11 @@ public static class MatchRoomDirector
 
                     var streamLength = client.GetStream().Read(buffer, 0, buffer.Length);
                     buffer = buffer[..streamLength];
+
+                    var json = Encoding.UTF8.GetString(buffer);
+                    Console.WriteLine(json);
                 
-                    var roomRequest = UserPacket.Parse(Encoding.UTF8.GetString(buffer));
+                    var roomRequest = UserPacket.Parse(json);
 
                     if (roomRequest.Type != UserPacket.ActionType.Join ||
                         !roomRequest.JsonData.TryGetValue("divisionName", out var divisionName) ||

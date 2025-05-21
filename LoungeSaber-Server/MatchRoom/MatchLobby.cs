@@ -125,6 +125,6 @@ public class MatchLobby
         var users = ConnectedUsers;
         
         foreach (var client in users)
-            await client.SendServerAction(packet);
+            await client.SendServerPacket(packet);
     }
 }
