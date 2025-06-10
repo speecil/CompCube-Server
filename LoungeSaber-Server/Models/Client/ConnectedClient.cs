@@ -45,7 +45,7 @@ public class ConnectedClient
         }
     }
 
-    public async Task SendPacket(ServerPacket packet)
+    public virtual async Task SendPacket(ServerPacket packet)
     {
         await _client.GetStream().WriteAsync(packet.SerializeToBytes());
     }

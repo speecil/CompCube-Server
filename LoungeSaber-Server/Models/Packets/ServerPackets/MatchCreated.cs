@@ -14,6 +14,7 @@ public class MatchCreated : ServerPacket
     [JsonProperty("opponent")]
     public readonly UserData Opponent;
 
+    [JsonConstructor]
     public MatchCreated(VotingMap[] maps, UserData opponent)
     {
         Maps = maps;

@@ -8,6 +8,6 @@ public class DebugMatchmaker : Matchmaker
 
     public override void AddClientToPool(ConnectedClient client)
     {
-        
+        var match = new Match.Match(client, null!);
     }
 }
