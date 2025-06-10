@@ -29,6 +29,7 @@ public abstract class ServerPacket : Packet
     
     public enum ServerPacketTypes
     {
-        JoinResponse
+        JoinResponse,
+        MatchCreated
     }
 }

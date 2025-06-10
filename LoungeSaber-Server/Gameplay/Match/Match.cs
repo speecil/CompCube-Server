@@ -11,18 +11,27 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
 
     public void StartMatch()
     {
-        var randomMapSelections = new List<VotingMap>();
+        var randomMapSelections = GetRandomMapSelections(3);
+        
+        
     }
 
     private VotingMap[] GetRandomMapSelections(int amount)
     {
+        var random = new Random();
+        
         var selections = new List<VotingMap>();
         
-        var allMaps = MapData.Instance.
+        var allMaps = MapData.Instance.GetAllMaps();
 
         while (selections.Count < amount)
         {
+            var randomMap = allMaps[random.Next(0, allMaps.Count)];
             
+            if (selections.Any(i => i.Category == randomMap.Category)) continue;
+            if (selections.Any(i => i.Hash == randomMap.Hash)) continue;
+            
+            selections.Add(randomMap);
         }
 
         return selections.ToArray();
