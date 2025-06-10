@@ -4,7 +4,7 @@ namespace LoungeSaber_Server.Gameplay.Matchmaking;
 
 public class DebugMatchmaker : Matchmaker
 {
-    public static readonly DebugMatchmaker Instance = new();
+    public static readonly DebugMatchmaker DebugInstance = new();
 
     public override void AddClientToPool(ConnectedClient client)
     {
