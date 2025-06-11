@@ -28,6 +28,7 @@ public abstract class UserPacket : Packet
 
     public enum UserPacketTypes
     {
-        JoinRequest
+        JoinRequest,
+        Vote
     }
 }

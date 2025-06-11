@@ -1,4 +1,5 @@
-﻿using LoungeSaber_Server.Models.Map;
+﻿using LoungeSaber_Server.Models.Client;
+using LoungeSaber_Server.Models.Map;
 using LoungeSaber_Server.SQL;
 using Newtonsoft.Json;
 
@@ -12,10 +13,10 @@ public class MatchCreated : ServerPacket
     public readonly VotingMap[] Maps;
     
     [JsonProperty("opponent")]
-    public readonly UserData Opponent;
+    public readonly UserInfo Opponent;
 
     [JsonConstructor]
-    public MatchCreated(VotingMap[] maps, UserData opponent)
+    public MatchCreated(VotingMap[] maps, UserInfo opponent)
     {
         Maps = maps;
         Opponent = opponent;

@@ -1,5 +1,6 @@
 ﻿using System.Net.Sockets;
 using LoungeSaber_Server.Models.Packets;
+using LoungeSaber_Server.Models.Packets.UserPackets;
 
 namespace LoungeSaber_Server.Models.Client;
 
@@ -11,7 +12,7 @@ public class DummyConnectedClient()
         switch (packet.PacketType)
         {
             case ServerPacket.ServerPacketTypes.MatchCreated:
-                
+                ProcessRecievedPacket(new VotePacket(0));
                 break;
             default:
                 throw new Exception("Unknown packet type");

@@ -23,7 +23,11 @@ public class UserData : Database
             
             var mmr = reader.GetInt32(1);
             var userName = reader.GetString(2);
-            var badge = GetBadge(reader.GetString(3));
+            Badge? badge = null;
+
+            if (!reader.IsDBNull(3))
+                badge = GetBadge(reader.GetString(3));
+            
             return new UserInfo(userName, userId, mmr, badge);
         }
 

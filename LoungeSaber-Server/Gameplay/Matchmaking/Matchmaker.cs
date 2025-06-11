@@ -1,23 +1,28 @@
-﻿using LoungeSaber_Server.Models.Client;
+﻿#define DEBUG
+using LoungeSaber_Server.Models.Client;
 using Timer = System.Timers.Timer;
 
 namespace LoungeSaber_Server.Gameplay.Matchmaking;
 
-public class Matchmaker
+public static class Matchmaker
 {
-    public static readonly Matchmaker Instance = new();
-    
-    private List<MatchmakingClient> _clientPool = [];
+    private static List<MatchmakingClient> _clientPool = [];
 
-    private Timer _mmrThresholdTimer = new Timer
+    private static Timer _mmrThresholdTimer = new Timer
     {
         Enabled = true,
         AutoReset = true,
         Interval = 5000
     };
 
-    public virtual void AddClientToPool(ConnectedClient client)
+    public static async Task AddClientToPool(ConnectedClient client)
     {
+        await Task.Delay(100);
+        #if !DEBUG
         _clientPool.Add(new MatchmakingClient(client));
+        #else
+        var match = new Match.Match(client, new DummyConnectedClient());
+        await match.StartMatch();
+        #endif
     }
 }

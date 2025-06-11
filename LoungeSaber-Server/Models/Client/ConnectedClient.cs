@@ -1,6 +1,8 @@
 ﻿using System.Net.Sockets;
 using System.Text;
 using LoungeSaber_Server.Models.Packets;
+using LoungeSaber_Server.Models.Packets.UserPackets;
+using Newtonsoft.Json;
 
 namespace LoungeSaber_Server.Models.Client;
 
@@ -12,12 +14,15 @@ public class ConnectedClient
 
     private bool _listenToClient = true;
     
-    public event Action<UserPacket> OnPacketReceived;
+    public event Action<VotePacket, ConnectedClient>? OnUserVoted;
 
     public ConnectedClient(TcpClient client, UserInfo userInfo)
     {
         _client = client;
         UserInfo = userInfo;
+
+        if (this is DummyConnectedClient) 
+            return;
         
         var listenerThread = new Thread(ListenToClient);
         listenerThread.Start();
@@ -31,12 +36,20 @@ public class ConnectedClient
             {
                 var buffer = new byte[1024];
 
+                _client.GetStream().Flush();
+                
                 while (!_client.GetStream().DataAvailable);
                 
                 var bytesRead = _client.GetStream().Read(buffer, 0, buffer.Length);
                 Array.Resize(ref buffer, bytesRead);
+                
+                var json = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
 
-                var packet = UserPacket.Deserialize(Encoding.UTF8.GetString(buffer));
+                Console.WriteLine(json);
+                
+                var packet = UserPacket.Deserialize(json);
+
+                ProcessRecievedPacket(packet);
             }
         }
         catch (Exception e)
@@ -45,8 +58,21 @@ public class ConnectedClient
         }
     }
 
+    protected void ProcessRecievedPacket(UserPacket packet)
+    {
+        switch (packet.PacketType)
+        {
+            case UserPacket.UserPacketTypes.Vote:
+                OnUserVoted?.Invoke(packet as VotePacket ?? throw new Exception("Could not parse vote packet!"), this);
+                break;
+            default:
+                throw new Exception("Unknown packet type!");
+        }
+    }
+
     public virtual async Task SendPacket(ServerPacket packet)
     {
+        Console.WriteLine(JsonConvert.SerializeObject(packet));
         await _client.GetStream().WriteAsync(packet.SerializeToBytes());
     }
 
