@@ -32,8 +32,14 @@ public class ConnectedClient
     {
         try
         {
-            while (_client.Connected)
+            while (_listenToClient)
             {
+                if (!_client.Connected)
+                {
+                    _listenToClient = false;
+                    return;
+                }
+                
                 var buffer = new byte[1024];
 
                 _client.GetStream().Flush();
@@ -55,6 +61,7 @@ public class ConnectedClient
         catch (Exception e)
         {
             Console.WriteLine(e);
+            StopListeningToClient();
         }
     }
 
@@ -66,6 +73,7 @@ public class ConnectedClient
                 OnUserVoted?.Invoke(packet as VotePacket ?? throw new Exception("Could not parse vote packet!"), this);
                 break;
             default:
+                StopListeningToClient();
                 throw new Exception("Unknown packet type!");
         }
     }

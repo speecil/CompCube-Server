@@ -50,7 +50,7 @@ public static class ConnectionManager
 
                     await connectedClient.SendPacket(new JoinResponse(true, ""));
                     
-                    Matchmaker.AddClientToPool(connectedClient);
+                    await Matchmaker.AddClientToPool(connectedClient);
                 }
                 catch (Exception e)
                 {

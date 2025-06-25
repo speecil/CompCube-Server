@@ -30,6 +30,8 @@ public abstract class ServerPacket : Packet
     public enum ServerPacketTypes
     {
         JoinResponse,
-        MatchCreated
+        MatchCreated,
+        OpponentVoted,
+        MatchStarted
     }
 }

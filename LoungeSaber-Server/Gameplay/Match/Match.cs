@@ -12,27 +12,42 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
     public readonly ConnectedClient PlayerOne = playerOne;
     public readonly ConnectedClient PlayerTwo = playerTwo;
 
-    private List<(VotingMap, ConnectedClient)> _userVotes = [];
+    private readonly List<(VotingMap, ConnectedClient)> _userVotes = [];
     
     private readonly VotingMap[] _mapSelections = GetRandomMapSelections(3);
 
     public async Task StartMatch()
     {
+        await PlayerOne.SendPacket(new MatchCreated(_mapSelections, PlayerTwo.UserInfo));
+        await PlayerTwo.SendPacket(new MatchCreated(_mapSelections, PlayerOne.UserInfo));
+        
         PlayerOne.OnUserVoted += OnUserVoted;
         PlayerTwo.OnUserVoted += OnUserVoted;
-        
-        await PlayerTwo.SendPacket(new MatchCreated(_mapSelections, PlayerOne.UserInfo));
-        await PlayerOne.SendPacket(new MatchCreated(_mapSelections, PlayerTwo.UserInfo));
     }
 
-    private void OnUserVoted(VotePacket vote, ConnectedClient client)
+    private async void OnUserVoted(VotePacket vote, ConnectedClient client)
     {
-        client.OnUserVoted -= OnUserVoted;
+        try
+        {
+            client.OnUserVoted -= OnUserVoted;
         
-        _userVotes.Add((_mapSelections[vote.VoteIndex], client));
+            _userVotes.Add((_mapSelections[vote.VoteIndex], client));
 
-        if (_userVotes.Count == 1) 
-            return;
+            await GetOppositeClient(client).SendPacket(new OpponentVoted(vote.VoteIndex));
+
+            if (_userVotes.Count == 1) 
+                return;
+            
+            var random = new Random();
+            
+            var selectedMap = _userVotes[random.Next(_userVotes.Count)].Item1;
+
+            await SendToBothClients(new MatchStarted(selectedMap, DateTime.UtcNow.AddSeconds(15), DateTime.UtcNow.AddSeconds(25)));
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
     }
 
     private async Task SendToBothClients(ServerPacket packet)
@@ -62,5 +77,5 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
         return selections.ToArray();
     }
 
-    private ConnectedClient GetOppositeClient(ConnectedClient client) => client.UserInfo.UserId == PlayerOne.UserInfo.UserId ? PlayerOne : PlayerTwo;
+    private ConnectedClient GetOppositeClient(ConnectedClient client) => client.UserInfo.UserId == PlayerOne.UserInfo.UserId ? PlayerTwo : PlayerOne;
 }
