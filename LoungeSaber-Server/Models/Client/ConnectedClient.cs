@@ -15,6 +15,8 @@ public class ConnectedClient
     private bool _listenToClient = true;
     
     public event Action<VotePacket, ConnectedClient>? OnUserVoted;
+    
+    public event Action<ScoreSubmissionPacket, ConnectedClient>? OnScoreSubmission;
 
     public ConnectedClient(TcpClient client, UserInfo userInfo)
     {
@@ -71,6 +73,9 @@ public class ConnectedClient
         {
             case UserPacket.UserPacketTypes.Vote:
                 OnUserVoted?.Invoke(packet as VotePacket ?? throw new Exception("Could not parse vote packet!"), this);
+                break;
+            case UserPacket.UserPacketTypes.ScoreSubmission:
+                OnScoreSubmission?.Invoke(packet as ScoreSubmissionPacket ?? throw new Exception("Could not parse score submission packet!"), this);
                 break;
             default:
                 StopListeningToClient();

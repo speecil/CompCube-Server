@@ -9,8 +9,8 @@ namespace LoungeSaber_Server.Gameplay.Match;
 
 public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
 {
-    public readonly ConnectedClient PlayerOne = playerOne;
-    public readonly ConnectedClient PlayerTwo = playerTwo;
+    private readonly ConnectedClient PlayerOne = playerOne;
+    private readonly ConnectedClient PlayerTwo = playerTwo;
 
     private readonly List<(VotingMap, ConnectedClient)> _userVotes = [];
     
@@ -18,11 +18,11 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
 
     public async Task StartMatch()
     {
-        await PlayerOne.SendPacket(new MatchCreated(_mapSelections, PlayerTwo.UserInfo));
-        await PlayerTwo.SendPacket(new MatchCreated(_mapSelections, PlayerOne.UserInfo));
-        
         PlayerOne.OnUserVoted += OnUserVoted;
         PlayerTwo.OnUserVoted += OnUserVoted;
+        
+        await PlayerOne.SendPacket(new MatchCreated(_mapSelections, PlayerTwo.UserInfo));
+        await PlayerTwo.SendPacket(new MatchCreated(_mapSelections, PlayerOne.UserInfo));
     }
 
     private async void OnUserVoted(VotePacket vote, ConnectedClient client)
@@ -35,14 +35,15 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
 
             await GetOppositeClient(client).SendPacket(new OpponentVoted(vote.VoteIndex));
 
-            if (_userVotes.Count == 1) 
+            if (_userVotes.Count != 2) 
                 return;
             
             var random = new Random();
             
             var selectedMap = _userVotes[random.Next(_userVotes.Count)].Item1;
 
-            await SendToBothClients(new MatchStarted(selectedMap, DateTime.UtcNow.AddSeconds(15), DateTime.UtcNow.AddSeconds(25)));
+            await SendToBothClients(new MatchStarted(selectedMap, DateTime.UtcNow.AddSeconds(15),
+                DateTime.UtcNow.AddSeconds(25)));
         }
         catch (Exception e)
         {

@@ -14,17 +14,17 @@ public class DummyConnectedClient()
         switch (packet.PacketType)
         {
             case ServerPacket.ServerPacketTypes.MatchCreated:
-                break;
-            case ServerPacket.ServerPacketTypes.OpponentVoted:
                 await Task.Delay(5000);
                 ProcessRecievedPacket(new VotePacket(0));
+                break;
+            case ServerPacket.ServerPacketTypes.OpponentVoted:
                 break;
             case ServerPacket.ServerPacketTypes.MatchStarted:
                 var matchStartedPacket = packet as MatchStarted ?? throw new Exception("no way this is a valid thing that can happen lmfao");
 
                 while (matchStartedPacket.StartingTime > DateTime.UtcNow);
-
-                ProcessRecievedPacket(new );
+                
+                ProcessRecievedPacket(new ScoreSubmissionPacket(100000, false, 0));
                 break;
             default:
                 throw new Exception("Unknown packet type");
