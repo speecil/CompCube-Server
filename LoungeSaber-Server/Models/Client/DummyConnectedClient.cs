@@ -24,7 +24,9 @@ public class DummyConnectedClient()
 
                 while (matchStartedPacket.StartingTime > DateTime.UtcNow);
                 
-                ProcessRecievedPacket(new ScoreSubmissionPacket(100000, false, 0));
+                ProcessRecievedPacket(new ScoreSubmissionPacket(100000, 100000, true, 0, true));
+                break;
+            case ServerPacket.ServerPacketTypes.MatchResults:
                 break;
             default:
                 throw new Exception("Unknown packet type");

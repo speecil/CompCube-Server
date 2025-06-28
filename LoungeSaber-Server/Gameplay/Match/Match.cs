@@ -1,4 +1,5 @@
-﻿using LoungeSaber_Server.Models.Client;
+﻿using System.Diagnostics;
+using LoungeSaber_Server.Models.Client;
 using LoungeSaber_Server.Models.Map;
 using LoungeSaber_Server.Models.Packets;
 using LoungeSaber_Server.Models.Packets.ServerPackets;
@@ -13,6 +14,9 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
     private readonly ConnectedClient PlayerTwo = playerTwo;
 
     private readonly List<(VotingMap, ConnectedClient)> _userVotes = [];
+
+    private ScoreSubmissionPacket? _playerOneScore = null;
+    private ScoreSubmissionPacket? _playerTwoScore = null;
     
     private readonly VotingMap[] _mapSelections = GetRandomMapSelections(3);
 
@@ -41,8 +45,11 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
             var random = new Random();
             
             var selectedMap = _userVotes[random.Next(_userVotes.Count)].Item1;
+            
+            PlayerOne.OnScoreSubmission += OnScoreSubmitted;
+            PlayerTwo.OnScoreSubmission += OnScoreSubmitted;
 
-            await SendToBothClients(new MatchStarted(selectedMap, DateTime.UtcNow.AddSeconds(15),
+            SendToBothClients(new MatchStarted(selectedMap, DateTime.UtcNow.AddSeconds(15),
                 DateTime.UtcNow.AddSeconds(25)));
         }
         catch (Exception e)
@@ -51,10 +58,55 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
         }
     }
 
-    private async Task SendToBothClients(ServerPacket packet)
+    private async void OnScoreSubmitted(ScoreSubmissionPacket score, ConnectedClient client)
     {
-        await PlayerOne.SendPacket(packet);
-        await PlayerTwo.SendPacket(packet);
+        try
+        {
+            client.OnScoreSubmission -= OnScoreSubmitted;
+        
+            if (client.UserInfo.UserId == PlayerOne.UserInfo.UserId) _playerOneScore = score;
+            else _playerTwoScore = score;
+
+            if (_playerOneScore == null || _playerTwoScore == null) 
+                return;
+            
+            var winnerScoreAndClient = _playerOneScore.Score > _playerTwoScore.Score ? (_playerOneScore, PlayerOne) : (_playerTwoScore, PlayerTwo);
+
+            if (_playerOneScore.Score == _playerTwoScore.Score)
+            {
+                winnerScoreAndClient = PlayerOne.UserInfo.Mmr > PlayerTwo.UserInfo.Mmr ? (_playerTwoScore, PlayerTwo) : (_playerOneScore, PlayerOne);
+            }
+            
+            var loserScoreAndClient = winnerScoreAndClient.Item1 == _playerOneScore ? (_playerTwoScore, PlayerTwo) : (_playerOneScore, PlayerOne);
+
+            var mmrChange = GetMmrChange(winnerScoreAndClient.Item2, loserScoreAndClient.Item2);
+            
+            await winnerScoreAndClient.Item2.SendPacket(new MatchResults(loserScoreAndClient.Item1, MatchResults.MatchWinner.You, mmrChange));
+            await loserScoreAndClient.Item2.SendPacket(new MatchResults(winnerScoreAndClient.Item1, MatchResults.MatchWinner.Opponent, mmrChange));
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+    }
+
+    private int GetMmrChange(ConnectedClient winner, ConnectedClient loser)
+    {
+        // TODO
+        return 0;
+    }
+
+    private void SendToBothClients(ServerPacket packet)
+    {
+        Task.Run(async () =>
+        {
+            await PlayerOne.SendPacket(packet);
+        });
+        
+        Task.Run(async () =>
+        {
+            await PlayerTwo.SendPacket(packet);
+        });
     }
 
     private static VotingMap[] GetRandomMapSelections(int amount)

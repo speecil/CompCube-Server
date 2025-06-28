@@ -8,18 +8,26 @@ public class ScoreSubmissionPacket : UserPacket
 
     [JsonProperty("score")]
     public readonly int Score;
+        
+    [JsonProperty("maxScore")]
+    public readonly int MaxScore;
     
     [JsonProperty("proMode")]
     public readonly bool ProMode;
     
     [JsonProperty("missCount")]
     public readonly int MissCount;
+        
+    [JsonProperty("fullCombo")]
+    public readonly bool FullCombo;
     
     [JsonConstructor]
-    public ScoreSubmissionPacket(int score, bool proMode, int missCount)
+    public ScoreSubmissionPacket(int score, int maxScore, bool proMode, int missCount, bool fullCombo)
     {
         Score = score;
+        MaxScore = maxScore;
         ProMode = proMode;
         MissCount = missCount;
+        FullCombo = fullCombo;
     }
 }

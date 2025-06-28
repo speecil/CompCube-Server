@@ -12,7 +12,7 @@ namespace LoungeSaber_Server
                 UserData.Instance.Start();
                 MapData.Instance.Start();
                 ConnectionManager.Start();
-                // Api.Api.Start();
+                Api.Api.Start();
             }
             catch (Exception e)
             {

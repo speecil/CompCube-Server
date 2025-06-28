@@ -23,6 +23,7 @@ public abstract class UserPacket : Packet
         {
             UserPacketTypes.JoinRequest => JsonConvert.DeserializeObject<JoinRequestPacket>(json)!,
             UserPacketTypes.Vote => JsonConvert.DeserializeObject<VotePacket>(json)!,
+            UserPacketTypes.ScoreSubmission => JsonConvert.DeserializeObject<ScoreSubmissionPacket>(json)!,
             _ => throw new Exception("Could not get packet type!")
         };
     }
