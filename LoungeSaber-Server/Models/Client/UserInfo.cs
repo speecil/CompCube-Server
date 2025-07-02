@@ -16,12 +16,16 @@ public class UserInfo
     [JsonProperty("badge")]
     public Badge.Badge? Badge { get; private set; }
     
+    [JsonProperty("rank")]
+    public long Rank { get; private set; }
+    
     [JsonConstructor]
-    public UserInfo(string username, string userId, int mmr, Badge.Badge? badge)
+    public UserInfo(string username, string userId, int mmr, Badge.Badge? badge, long rank)
     {
         Username = username;
         UserId = userId;
         Mmr = mmr;
         Badge = badge;
+        Rank = rank;
     }
 }

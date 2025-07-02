@@ -46,7 +46,7 @@ public static class ConnectionManager
 
                     var packet = UserPacket.Deserialize(json) as JoinRequestPacket ?? throw new Exception("Could not deserialize packet!");
 
-                    var connectedClient = new ConnectedClient(client, UserData.Instance.UpdateUserLoginData(packet.UserId, packet.UserName));
+                    var connectedClient = new ConnectedClient(client, UserData.Instance.UpdateUserDataOnLogin(packet.UserId, packet.UserName));
 
                     await connectedClient.SendPacket(new JoinResponse(true, ""));
                     

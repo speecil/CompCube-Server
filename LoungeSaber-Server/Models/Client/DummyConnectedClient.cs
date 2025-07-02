@@ -3,12 +3,13 @@ using System.Net.Sockets;
 using LoungeSaber_Server.Models.Packets;
 using LoungeSaber_Server.Models.Packets.ServerPackets;
 using LoungeSaber_Server.Models.Packets.UserPackets;
+using LoungeSaber_Server.SQL;
 using Newtonsoft.Json;
 
 namespace LoungeSaber_Server.Models.Client;
 
 public class DummyConnectedClient()
-    : ConnectedClient(null!, new UserInfo("debug", "0", 1000, new Badge.Badge("dummy", "#808080", true)))
+    : ConnectedClient(null!, UserData.Instance.GetUserById("0") ?? throw new Exception())
 {
     public override async Task SendPacket(ServerPacket packet)
     {

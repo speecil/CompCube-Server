@@ -9,7 +9,26 @@ public class UserData : Database
 
     protected override string DatabaseName => "LoungeData";
 
-    public UserInfo? GetUser(string userId)
+    public UserInfo? GetUserByDiscordId(string discordId)
+    {
+        var command = _connection.CreateCommand();
+        command.CommandText = "SELECT * FROM discord WHERE discordId = @discordId LIMIT 1";
+        command.Parameters.AddWithValue("discordId", discordId);
+        
+        using var reader = command.ExecuteReader();
+
+        while (reader.Read())
+        {
+            if (reader.FieldCount == 0) return null;
+            
+            var userId = reader.GetString(0);
+            
+            return GetUserById(userId);
+        }
+        return null;
+    }
+
+    public UserInfo? GetUserById(string userId)
     {
         var command = _connection.CreateCommand();
         command.CommandText = $"SELECT * FROM userData WHERE userData.id = @id LIMIT 1";
@@ -25,10 +44,15 @@ public class UserData : Database
             var userName = reader.GetString(2);
             Badge? badge = null;
 
+            var rankCommand = _connection.CreateCommand();
+            rankCommand.CommandText = $"SELECT COUNT(*) FROM userData WHERE mmr > @mmrThreshold ORDER BY mmr";
+            rankCommand.Parameters.AddWithValue("mmrThreshold", mmr);
+            var rank = (long) (rankCommand.ExecuteScalar() ?? throw new Exception("Could not get user rank!")) + 1;
+
             if (!reader.IsDBNull(3))
                 badge = GetBadge(reader.GetString(3));
             
-            return new UserInfo(userName, userId, mmr, badge);
+            return new UserInfo(userName, userId, mmr, badge, rank);
         }
 
         return null;
@@ -42,7 +66,7 @@ public class UserData : Database
         command.Parameters.AddWithValue("id", user.UserId);
         command.ExecuteNonQuery();
         
-        return GetUser(user.UserId) ?? throw new Exception("Could not find updated user!");
+        return GetUserById(user.UserId) ?? throw new Exception("Could not find updated user!");
     }
 
     public Badge? GetBadge(string? badgeName)
@@ -68,9 +92,9 @@ public class UserData : Database
         return null;
     }
     
-    public UserInfo UpdateUserLoginData(string userId, string userName)
+    public UserInfo UpdateUserDataOnLogin(string userId, string userName)
     {
-        var user = GetUser(userId);
+        var user = GetUserById(userId);
         if (user != null)
         {
             var updateUserNameCommand = _connection.CreateCommand();
@@ -80,7 +104,7 @@ public class UserData : Database
             updateUserNameCommand.ExecuteNonQuery();
             
             // avoid fetching from db twice in a row
-            return new UserInfo(userName, userId, user.Mmr, user.Badge);
+            return GetUserById(userId) ??  throw new Exception("Could not find updated user!");
         }
         
         var addToUserDataCommand = _connection.CreateCommand();
@@ -89,7 +113,7 @@ public class UserData : Database
         addToUserDataCommand.Parameters.AddWithValue("userName", userName);
         addToUserDataCommand.ExecuteNonQuery();
 
-        return new UserInfo(userName, userId, 1000, null);
+        return GetUserById(userId) ?? throw new Exception("Could not find updated user!");
     }
     
     protected override void CreateInitialTables()
@@ -102,7 +126,7 @@ public class UserData : Database
     private void CreateLinkedDiscordTable()
     {
         var command = _connection.CreateCommand();
-        command.CommandText = "CREATE TABLE IF NOT EXISTS discord (id TEXT NOT NULL PRIMARY KEY, discordId TEXT NOT NULL)";
+        command.CommandText = "CREATE TABLE IF NOT EXISTS discord (id TEXT NOT NULL PRIMARY KEY, discordId TEXT NOT NULL UNIQUE )";
         command.ExecuteNonQuery();
     }
 
