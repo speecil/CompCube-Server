@@ -53,7 +53,7 @@ public class ConnectedClient
                 
                 var json = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
 
-                Console.WriteLine(json);
+                Console.WriteLine($"Recieved from client: {json}");
                 
                 var packet = UserPacket.Deserialize(json);
 
@@ -69,6 +69,7 @@ public class ConnectedClient
 
     protected void ProcessRecievedPacket(UserPacket packet)
     {
+        Console.WriteLine("Sent to client: ");
         switch (packet.PacketType)
         {
             case UserPacket.UserPacketTypes.Vote:
@@ -85,7 +86,7 @@ public class ConnectedClient
 
     public virtual async Task SendPacket(ServerPacket packet)
     {
-        Console.WriteLine(JsonConvert.SerializeObject(packet));
+        Console.WriteLine($"Sent to {UserInfo.Username}: " + JsonConvert.SerializeObject(packet));
         await _client.GetStream().WriteAsync(packet.SerializeToBytes());
     }
 

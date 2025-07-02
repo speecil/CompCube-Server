@@ -79,10 +79,13 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
             
             var loserScoreAndClient = winnerScoreAndClient.Item1 == _playerOneScore ? (_playerTwoScore, PlayerTwo) : (_playerOneScore, PlayerOne);
 
-            var mmrChange = GetMmrChange(winnerScoreAndClient.Item2, loserScoreAndClient.Item2);
+            var mmrChange = GetMmrChange(winnerScoreAndClient.Item2.UserInfo, loserScoreAndClient.Item2.UserInfo);
+
+            var newWinnerUserData = UserData.Instance.ApplyMmrChange(winnerScoreAndClient.Item2.UserInfo, mmrChange);
+            var newLoserUserData = UserData.Instance.ApplyMmrChange(loserScoreAndClient.Item2.UserInfo, -mmrChange);
             
-            await winnerScoreAndClient.Item2.SendPacket(new MatchResults(loserScoreAndClient.Item1, winnerScoreAndClient.Item1, MatchResults.MatchWinner.You, mmrChange));
-            await loserScoreAndClient.Item2.SendPacket(new MatchResults(winnerScoreAndClient.Item1, loserScoreAndClient.Item1, MatchResults.MatchWinner.Opponent, mmrChange));
+            await winnerScoreAndClient.Item2.SendPacket(new MatchResults(loserScoreAndClient.Item1, winnerScoreAndClient.Item1, MatchResults.MatchWinner.You, mmrChange, newLoserUserData, newWinnerUserData));
+            await loserScoreAndClient.Item2.SendPacket(new MatchResults(winnerScoreAndClient.Item1, loserScoreAndClient.Item1, MatchResults.MatchWinner.Opponent, mmrChange, newWinnerUserData, newLoserUserData));
         }
         catch (Exception e)
         {
@@ -90,7 +93,7 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
         }
     }
 
-    private int GetMmrChange(ConnectedClient winner, ConnectedClient loser)
+    private int GetMmrChange(UserInfo winner, UserInfo loser)
     {
         // TODO
         return 0;

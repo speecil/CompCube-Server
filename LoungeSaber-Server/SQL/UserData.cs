@@ -34,6 +34,17 @@ public class UserData : Database
         return null;
     }
 
+    public UserInfo ApplyMmrChange(UserInfo user, int newMmr)
+    {
+        var command = _connection.CreateCommand();
+        command.CommandText = "UPDATE userData SET mmr = @newMmr WHERE userData.id = @id";
+        command.Parameters.AddWithValue("newMmr", newMmr);
+        command.Parameters.AddWithValue("id", user.UserId);
+        command.ExecuteNonQuery();
+        
+        return GetUser(user.UserId) ?? throw new Exception("Could not find updated user!");
+    }
+
     public Badge? GetBadge(string? badgeName)
     {
         if (badgeName == null) return null;
