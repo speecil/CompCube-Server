@@ -30,6 +30,8 @@ public class DummyConnectedClient()
                 break;
             case ServerPacket.ServerPacketTypes.MatchResults:
                 break;
+            case ServerPacket.ServerPacketTypes.PrematureMatchEnd:
+                break;
             default:
                 throw new Exception("Unknown packet type");
         }

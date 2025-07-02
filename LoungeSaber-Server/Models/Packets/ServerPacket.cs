@@ -16,6 +16,7 @@ public abstract class ServerPacket : Packet
         MatchCreated,
         OpponentVoted,
         MatchStarted,
-        MatchResults
+        MatchResults,
+        PrematureMatchEnd
     }
 }

@@ -15,8 +15,8 @@ public class ConnectedClient
     private bool _listenToClient = true;
     
     public event Action<VotePacket, ConnectedClient>? OnUserVoted;
-    
     public event Action<ScoreSubmissionPacket, ConnectedClient>? OnScoreSubmission;
+    public event Action<ConnectedClient> OnDisconnected; 
 
     public ConnectedClient(TcpClient client, UserInfo userInfo)
     {
@@ -64,6 +64,7 @@ public class ConnectedClient
         {
             Console.WriteLine(e);
             StopListeningToClient();
+            OnDisconnected?.Invoke(this);
         }
     }
 
@@ -92,6 +93,8 @@ public class ConnectedClient
 
     public void StopListeningToClient()
     {
+        if (this is DummyConnectedClient) return;
+        
         _listenToClient = false;
         _client.Close();
     }

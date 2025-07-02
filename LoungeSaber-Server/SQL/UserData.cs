@@ -34,11 +34,11 @@ public class UserData : Database
         return null;
     }
 
-    public UserInfo ApplyMmrChange(UserInfo user, int newMmr)
+    public UserInfo ApplyMmrChange(UserInfo user, int mmrChange)
     {
         var command = _connection.CreateCommand();
         command.CommandText = "UPDATE userData SET mmr = @newMmr WHERE userData.id = @id";
-        command.Parameters.AddWithValue("newMmr", newMmr);
+        command.Parameters.AddWithValue("newMmr", user.Mmr + mmrChange);
         command.Parameters.AddWithValue("id", user.UserId);
         command.ExecuteNonQuery();
         

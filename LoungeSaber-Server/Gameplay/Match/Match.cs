@@ -19,14 +19,47 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
     private ScoreSubmissionPacket? _playerTwoScore = null;
     
     private readonly VotingMap[] _mapSelections = GetRandomMapSelections(3);
+    
+    public event Action<MatchResults?>? OnMatchEnded;
+    public event Action<ConnectedClient, int, string>? OnPlayerPunished;
 
     public async Task StartMatch()
     {
+        PlayerOne.OnDisconnected += OnPlayerDisconnected;
+        PlayerTwo.OnDisconnected += OnPlayerDisconnected;
+        
         PlayerOne.OnUserVoted += OnUserVoted;
         PlayerTwo.OnUserVoted += OnUserVoted;
         
         await PlayerOne.SendPacket(new MatchCreated(_mapSelections, PlayerTwo.UserInfo));
         await PlayerTwo.SendPacket(new MatchCreated(_mapSelections, PlayerOne.UserInfo));
+    }
+
+    private async void OnPlayerDisconnected(ConnectedClient client)
+    {
+        try
+        {
+            var mmrChange = GetMmrChange(GetOppositeClient(client).UserInfo, client.UserInfo);
+            
+            UserData.Instance.ApplyMmrChange(client.UserInfo, -mmrChange-50);
+            UserData.Instance.ApplyMmrChange(GetOppositeClient(client).UserInfo, mmrChange);
+            OnPlayerPunished?.Invoke(client, 50, "Leaving Match Early");
+            await GetOppositeClient(client).SendPacket(new PrematureMatchEnd("OpponentDisconnected"));
+            EndMatch(null);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+    }
+    
+    
+
+    private void EndMatch(MatchResults? results)
+    {
+        PlayerOne.StopListeningToClient();
+        PlayerTwo.StopListeningToClient();
+        OnMatchEnded?.Invoke(results);
     }
 
     private async void OnUserVoted(VotePacket vote, ConnectedClient client)
@@ -83,9 +116,14 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
 
             var newWinnerUserData = UserData.Instance.ApplyMmrChange(winnerScoreAndClient.Item2.UserInfo, mmrChange);
             var newLoserUserData = UserData.Instance.ApplyMmrChange(loserScoreAndClient.Item2.UserInfo, -mmrChange);
+
+            var winnerResults = new MatchResults(loserScoreAndClient.Item1, winnerScoreAndClient.Item1,
+                MatchResults.MatchWinner.You, mmrChange, newLoserUserData, newWinnerUserData);
             
-            await winnerScoreAndClient.Item2.SendPacket(new MatchResults(loserScoreAndClient.Item1, winnerScoreAndClient.Item1, MatchResults.MatchWinner.You, mmrChange, newLoserUserData, newWinnerUserData));
+            await winnerScoreAndClient.Item2.SendPacket(winnerResults);
             await loserScoreAndClient.Item2.SendPacket(new MatchResults(winnerScoreAndClient.Item1, loserScoreAndClient.Item1, MatchResults.MatchWinner.Opponent, mmrChange, newWinnerUserData, newLoserUserData));
+            
+            EndMatch(winnerResults);
         }
         catch (Exception e)
         {
