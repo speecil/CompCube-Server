@@ -16,7 +16,7 @@ public class ConnectedClient
     
     public event Action<VotePacket, ConnectedClient>? OnUserVoted;
     public event Action<ScoreSubmissionPacket, ConnectedClient>? OnScoreSubmission;
-    public event Action<ConnectedClient> OnDisconnected; 
+    public event Action<ConnectedClient>? OnDisconnected; 
 
     public ConnectedClient(TcpClient client, UserInfo userInfo)
     {

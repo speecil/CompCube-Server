@@ -5,10 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace LoungeSaber_Server.Api.Controllers;
 
 [ApiController]
-[Route("api/user")]
 public class UserApiController : ControllerBase
 {
-    [HttpGet("/id/{id}")]
+    [HttpGet("/api/user/id/{id}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<UserInfo> GetUserById(string id)
@@ -21,7 +20,7 @@ public class UserApiController : ControllerBase
         return user;
     }
 
-    [HttpGet("/discord/{discordId}")]
+    [HttpGet("/api/user/discord/{discordId}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<UserInfo> GetUserByDiscordId(string discordId)

@@ -5,10 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace LoungeSaber_Server.Api.Controllers;
 
 [ApiController]
-[Route("api/leaderboard")]
 public class LeaderboardApiController : ControllerBase
 {
-    [HttpGet("/leaderboardRange/")]
+    [HttpGet("api/leaderboard/leaderboardRange/")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<UserInfo[]> GetLeaderboardRange(int start, int range)
     {
