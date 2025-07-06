@@ -66,7 +66,7 @@ public class UserData : Database
     public List<UserInfo> GetAllUsers()
     {
         var command = _connection.CreateCommand();
-        command.CommandText = "SELECT * FROM userData ORDER BY mmr";
+        command.CommandText = "SELECT * FROM userData ORDER BY mmr DESC";
         
         var userList = new List<UserInfo>();
         

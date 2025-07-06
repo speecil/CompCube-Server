@@ -7,7 +7,7 @@ namespace LoungeSaber_Server.Api.Controllers;
 [ApiController]
 public class LeaderboardApiController : ControllerBase
 {
-    [HttpGet("api/leaderboard/leaderboardRange/")]
+    [HttpGet("api/leaderboard/range/")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<UserInfo[]> GetLeaderboardRange(int start, int range)
     {
