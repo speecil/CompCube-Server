@@ -37,4 +37,8 @@ public class DummyConnectedClient()
                 throw new Exception("Unknown packet type");
         }
     }
+
+    public override void StopListeningToClient() {}
+
+    protected override void ListenToClient() {}
 }

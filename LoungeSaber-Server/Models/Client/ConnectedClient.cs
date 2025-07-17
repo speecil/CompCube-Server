@@ -22,15 +22,12 @@ public class ConnectedClient
     {
         _client = client;
         UserInfo = userInfo;
-
-        if (this is DummyConnectedClient) 
-            return;
         
         var listenerThread = new Thread(ListenToClient);
         listenerThread.Start();
     }
 
-    private void ListenToClient()
+    protected virtual void ListenToClient()
     {
         try
         {
@@ -91,10 +88,8 @@ public class ConnectedClient
         await _client.GetStream().WriteAsync(packet.SerializeToBytes());
     }
 
-    public void StopListeningToClient()
+    public virtual void StopListeningToClient()
     {
-        if (this is DummyConnectedClient) return;
-        
         _listenToClient = false;
         _client.Close();
     }

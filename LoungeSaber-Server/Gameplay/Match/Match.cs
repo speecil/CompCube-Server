@@ -23,6 +23,8 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
     public event Action<MatchResults?>? OnMatchEnded;
     public event Action<ConnectedClient, int, string>? OnPlayerPunished;
 
+    public const int MmrLossOnDisconnect = 50;
+
     public async Task StartMatch()
     {
         PlayerOne.OnDisconnected += OnPlayerDisconnected;
@@ -41,7 +43,7 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
         {
             var mmrChange = GetMmrChange(GetOppositeClient(client).UserInfo, client.UserInfo);
             
-            UserData.Instance.ApplyMmrChange(client.UserInfo, -mmrChange-50);
+            UserData.Instance.ApplyMmrChange(client.UserInfo, -mmrChange - MmrLossOnDisconnect);
             UserData.Instance.ApplyMmrChange(GetOppositeClient(client).UserInfo, mmrChange);
             OnPlayerPunished?.Invoke(client, 50, "Leaving Match Early");
             await GetOppositeClient(client).SendPacket(new PrematureMatchEnd("OpponentDisconnected"));
