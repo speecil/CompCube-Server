@@ -33,9 +33,13 @@ public class ConnectedClient
         {
             while (_listenToClient)
             {
-                if (!_client.Connected)
+                // if client disconnects
+                if (_client.Client.Poll(1, SelectMode.SelectRead) && !_client.GetStream().DataAvailable)
                 {
                     _listenToClient = false;
+                    StopListeningToClient();
+                    OnDisconnected?.Invoke(this);
+                    Console.WriteLine("user disconnected!");
                     return;
                 }
                 
@@ -43,7 +47,8 @@ public class ConnectedClient
 
                 _client.GetStream().Flush();
                 
-                while (!_client.GetStream().DataAvailable);
+                if (!_client.GetStream().DataAvailable)
+                    continue;
                 
                 var bytesRead = _client.GetStream().Read(buffer, 0, buffer.Length);
                 Array.Resize(ref buffer, bytesRead);
@@ -67,7 +72,6 @@ public class ConnectedClient
 
     protected void ProcessRecievedPacket(UserPacket packet)
     {
-        Console.WriteLine("Sent to client: ");
         switch (packet.PacketType)
         {
             case UserPacket.UserPacketTypes.Vote:
