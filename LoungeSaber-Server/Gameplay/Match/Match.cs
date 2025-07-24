@@ -59,6 +59,9 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
 
     private void EndMatch(MatchResults? results)
     {
+        PlayerOne.OnDisconnected -= OnPlayerDisconnected;
+        PlayerTwo.OnDisconnected -= OnPlayerDisconnected;
+        
         PlayerOne.StopListeningToClient();
         PlayerTwo.StopListeningToClient();
         OnMatchEnded?.Invoke(results);

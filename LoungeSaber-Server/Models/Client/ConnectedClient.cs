@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace LoungeSaber_Server.Models.Client;
 
-public class ConnectedClient
+public class ConnectedClient : IDisposable
 {
     private readonly TcpClient _client;
     
@@ -33,8 +33,7 @@ public class ConnectedClient
         {
             while (_listenToClient)
             {
-                // if client disconnects
-                if (_client.Client.Poll(1, SelectMode.SelectRead) && !_client.GetStream().DataAvailable)
+                if (!IsConnectionAlive())
                 {
                     _listenToClient = false;
                     StopListeningToClient();
@@ -70,6 +69,20 @@ public class ConnectedClient
         }
     }
 
+    private bool IsConnectionAlive()
+    {
+        try
+        {
+            var poll = _client.Client.Poll(1, SelectMode.SelectRead) && !_client.GetStream().DataAvailable;
+
+            return !poll;
+        }
+        catch (SocketException e)
+        {
+            return e.SocketErrorCode is SocketError.WouldBlock or SocketError.Interrupted;
+        }
+    }
+
     protected void ProcessRecievedPacket(UserPacket packet)
     {
         switch (packet.PacketType)
@@ -96,5 +109,10 @@ public class ConnectedClient
     {
         _listenToClient = false;
         _client.Close();
+    }
+
+    public void Dispose()
+    {
+        StopListeningToClient();
     }
 }
