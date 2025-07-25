@@ -1,3 +1,4 @@
+#define DEBUG
 using LoungeSaber_Server.Gameplay.Matchmaking;
 using LoungeSaber_Server.SQL;
 
@@ -5,6 +6,8 @@ namespace LoungeSaber_Server
 {
     public class Program
     {
+        public const bool Debug = true;
+        
         public static void Main(string[] args)
         {
             try
@@ -18,7 +21,6 @@ namespace LoungeSaber_Server
             {
                 Console.WriteLine(e);
             }
-
         }
     }
 }

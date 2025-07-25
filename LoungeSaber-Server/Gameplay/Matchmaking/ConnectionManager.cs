@@ -12,25 +12,25 @@ namespace LoungeSaber_Server.Gameplay.Matchmaking;
 public static class ConnectionManager
 {
     //TODO: change listener ip when not developing
-    private static readonly TcpListener Listener = new(IPAddress.Loopback, 8008);
+    private static readonly TcpListener Listener = new(IPAddress.Any, 8008);
 
-    private static readonly Thread listenForClientsThread = new(ListenForClients);
+    private static readonly Thread ListenForClientsThread = new(ListenForClients);
     
-    private static bool IsStarted = false;
+    private static bool _isStarted = false;
 
     public static void Start()
     {
         Listener.Start();
-        IsStarted = true;
+        _isStarted = true;
         
-        listenForClientsThread.Start();
+        ListenForClientsThread.Start();
     }
 
     private static async void ListenForClients()
     {
         try
         {
-            while (IsStarted)
+            while (_isStarted)
             {
                 var client = Listener.AcceptTcpClient();
                 
@@ -72,7 +72,7 @@ public static class ConnectionManager
 
     public static void Stop()
     {
-        IsStarted = false;
+        _isStarted = false;
         Listener.Stop();
     }
 }
