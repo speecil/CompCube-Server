@@ -101,6 +101,7 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
         try
         {
             client.OnScoreSubmission -= OnScoreSubmitted;
+            client.OnDisconnected -= OnPlayerDisconnected;
         
             if (client.UserInfo.UserId == PlayerOne.UserInfo.UserId) _playerOneScore = score;
             else _playerTwoScore = score;

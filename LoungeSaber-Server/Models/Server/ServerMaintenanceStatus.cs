@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace LoungeSaber_Server.Models.Server;
 
-public class ServerStatus
+public class ServerMaintenanceStatus
 {
     [JsonProperty("allowedGameVersions")]
     public readonly string[] AllowedGameVersions;
@@ -12,9 +12,9 @@ public class ServerStatus
     public readonly string[] AllowedModVersions;
     
     [JsonProperty("state")]
-    public readonly ServerStateController.ServerState State;
+    public readonly ServerMaintenanceStateController.ServerState State;
 
-    public ServerStatus(string[] allowedGameVersions, string[] allowedModVersions, ServerStateController.ServerState state)
+    public ServerMaintenanceStatus(string[] allowedGameVersions, string[] allowedModVersions, ServerMaintenanceStateController.ServerState state)
     {
         AllowedGameVersions = allowedGameVersions;
         AllowedModVersions = allowedModVersions;

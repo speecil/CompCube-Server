@@ -12,5 +12,5 @@ public class ServerStatusApiController : ControllerBase
     //TODO: make the server stop accepting join requests if the server is not in online mode
     [HttpGet("/api/server/status")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public ActionResult<string> GetServerStatus() => JsonConvert.SerializeObject(new ServerStatus(["1.39.1"], ["1.0.0"], ServerStateController.State));
+    public ActionResult<string> GetServerStatus() => JsonConvert.SerializeObject(new ServerMaintenanceStatus(["1.39.1"], ["1.0.0"], ServerMaintenanceStateController.State));
 }

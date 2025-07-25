@@ -1,6 +1,6 @@
 ﻿namespace LoungeSaber_Server.ServerState;
 
-public static class ServerStateController
+public static class ServerMaintenanceStateController
 {
     private static ServerState _state = ServerState.Online;
 
