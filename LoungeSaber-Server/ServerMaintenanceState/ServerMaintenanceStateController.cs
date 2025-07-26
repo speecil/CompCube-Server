@@ -1,4 +1,4 @@
-﻿namespace LoungeSaber_Server.ServerState;
+﻿namespace LoungeSaber_Server.ServerMaintenanceState;
 
 public static class ServerMaintenanceStateController
 {

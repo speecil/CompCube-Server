@@ -1,5 +1,5 @@
 ﻿using LoungeSaber_Server.Models.Server;
-using LoungeSaber_Server.ServerState;
+using LoungeSaber_Server.ServerMaintenanceState;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
@@ -12,5 +12,5 @@ public class ServerStatusApiController : ControllerBase
     //TODO: make the server stop accepting join requests if the server is not in online mode
     [HttpGet("/api/server/status")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public ActionResult<string> GetServerStatus() => JsonConvert.SerializeObject(new ServerMaintenanceStatus(["1.39.1"], ["1.0.0"], ServerMaintenanceStateController.State));
+    public ActionResult<string> GetServerStatus() => JsonConvert.SerializeObject(ServerStatus.GetServerMaintenanceState());
 }
