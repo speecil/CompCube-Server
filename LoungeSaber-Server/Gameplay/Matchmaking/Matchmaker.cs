@@ -29,6 +29,9 @@ public static class Matchmaker
     {
         if (_clientPool.Count < 2) 
             return;
+
+        _clientPool.Remove(_clientPool[0]);
+        _clientPool.Remove(_clientPool[1]);
         
         var match = new Match.Match(_clientPool[0].Client, _clientPool[1].Client);
         ActiveMatches.Add(match);
@@ -46,13 +49,7 @@ public static class Matchmaker
     {
         match.OnMatchEnded -= OnMatchEnded;
 
-        _clientPool.Remove(GetMatchmakingClientFromConnectedClient(match.PlayerOne));
-        _clientPool.Remove(GetMatchmakingClientFromConnectedClient(match.PlayerTwo));
-
-        return;
-
-        MatchmakingClient GetMatchmakingClientFromConnectedClient(ConnectedClient c) =>
-            _clientPool.First(i => i.Client == c);
+        ActiveMatches.Remove(match);
     }
 
     public static async Task AddClientToPool(ConnectedClient client)
