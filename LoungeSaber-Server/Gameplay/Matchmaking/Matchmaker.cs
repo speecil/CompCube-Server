@@ -29,11 +29,12 @@ public static class Matchmaker
     {
         if (_clientPool.Count < 2) 
             return;
-
-        _clientPool.Remove(_clientPool[0]);
-        _clientPool.Remove(_clientPool[1]);
         
         var match = new Match.Match(_clientPool[0].Client, _clientPool[1].Client);
+
+        _clientPool.Remove(_clientPool[1]);
+        _clientPool.Remove(_clientPool[0]);
+        
         ActiveMatches.Add(match);
         OnMatchStarted?.Invoke(match);
         
