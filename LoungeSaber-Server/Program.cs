@@ -1,4 +1,4 @@
-// using LoungeSaber_Server.Discord;
+using LoungeSaber_Server.Discord;
 using LoungeSaber_Server.Gameplay.Matchmaking;
 using LoungeSaber_Server.SQL;
 
@@ -15,7 +15,7 @@ namespace LoungeSaber_Server
                 UserData.Instance.Start();
                 MapData.Instance.Start();
                 ConnectionManager.Start();
-                // DiscordBot.RunDiscordBot();
+                DiscordBot.RunDiscordBot();
                 Api.Api.Start();
             }
             catch (Exception e)

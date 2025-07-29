@@ -1,6 +1,5 @@
-﻿/*using NetCord;
+﻿using NetCord;
 using NetCord.Gateway;
-using NetCord.Hosting.Gateway;
 using NetCord.Logging;
 
 namespace LoungeSaber_Server.Discord;
@@ -20,4 +19,4 @@ public class DiscordBot
             await Task.Delay(-1);
         });
     }
-}*/
+}
