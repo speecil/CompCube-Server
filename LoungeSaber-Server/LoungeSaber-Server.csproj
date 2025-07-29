@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>LoungeSaber_Server</RootNamespace>
@@ -9,13 +9,16 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.15"/>
-        <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0-preview.4.25258.110" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0-preview.6.25358.103" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2"/>
+        <PackageReference Include="System.Data.SQLite" Version="1.0.119" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Config\" />
+      <Reference Include="System.Net.Primitives">
+        <HintPath>..\..\..\.dotnet\packs\Microsoft.NETCore.App.Ref\8.0.13\ref\net8.0\System.Net.Primitives.dll</HintPath>
+      </Reference>
     </ItemGroup>
 
 </Project>

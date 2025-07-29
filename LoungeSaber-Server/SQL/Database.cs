@@ -1,6 +1,5 @@
 ﻿using System.Data;
-using System.Runtime.CompilerServices;
-using Microsoft.Data.Sqlite;
+using System.Data.SQLite;
 
 namespace LoungeSaber_Server.SQL;
 
@@ -8,7 +7,7 @@ public abstract class Database
 {
     protected abstract string DatabaseName { get; }
     
-    protected readonly SqliteConnection _connection;
+    protected readonly SQLiteConnection _connection;
 
     protected static string DataFolderPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
 
@@ -16,7 +15,7 @@ public abstract class Database
 
     protected Database()
     {
-        _connection = new($"Data Source={Path.Combine(DataFolderPath, $"{DatabaseName}.db")}");
+        _connection = new($"Data Source={Path.Combine(DataFolderPath, $"{DatabaseName}.db;")}");
     }
 
     public void Start()

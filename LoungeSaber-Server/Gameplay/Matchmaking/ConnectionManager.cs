@@ -12,7 +12,7 @@ namespace LoungeSaber_Server.Gameplay.Matchmaking;
 public static class ConnectionManager
 {
     //TODO: change listener ip when not developing
-    private static readonly TcpListener Listener = new(IPAddress.Any, 8008);
+    private static readonly TcpListener Listener = new(IPAddress.Parse("192.168.1.6"), 8008);
 
     private static readonly Thread ListenForClientsThread = new(ListenForClients);
     
@@ -55,7 +55,7 @@ public static class ConnectionManager
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
-                    DisconnectClient(client, "UnhandledServerException");
+                    client.Close();
                 }
             }
         }
@@ -63,11 +63,6 @@ public static class ConnectionManager
         {
             Console.WriteLine(e);
         }
-    }
-
-    private static void DisconnectClient(TcpClient client, string reason)
-    {
-        // TODO
     }
 
     public static void Stop()

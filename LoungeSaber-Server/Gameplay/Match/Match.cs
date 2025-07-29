@@ -45,8 +45,11 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
             
             UserData.Instance.ApplyMmrChange(client.UserInfo, -mmrChange - MmrLossOnDisconnect);
             UserData.Instance.ApplyMmrChange(GetOppositeClient(client).UserInfo, mmrChange);
+            
             OnPlayerPunished?.Invoke(client, 50, "Leaving Match Early");
+            
             await GetOppositeClient(client).SendPacket(new PrematureMatchEnd("OpponentDisconnected"));
+            
             EndMatch(null);
         }
         catch (Exception e)
@@ -86,6 +89,8 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
             
             PlayerOne.OnScoreSubmission += OnScoreSubmitted;
             PlayerTwo.OnScoreSubmission += OnScoreSubmitted;
+
+            await Task.Delay(3000);
 
             SendToBothClients(new MatchStarted(selectedMap, DateTime.UtcNow.AddSeconds(15),
                 DateTime.UtcNow.AddSeconds(25)));
@@ -168,8 +173,11 @@ public class Match(ConnectedClient playerOne, ConnectedClient playerTwo)
         {
             var randomMap = allMaps[random.Next(0, allMaps.Count)];
             
-            if (selections.Any(i => i.Category == randomMap.Category)) continue;
-            if (selections.Any(i => i.Hash == randomMap.Hash)) continue;
+            if (selections.Any(i => i.Category == randomMap.Category)) 
+                continue;
+            
+            if (selections.Any(i => i.Hash == randomMap.Hash)) 
+                continue;
             
             selections.Add(randomMap);
         }

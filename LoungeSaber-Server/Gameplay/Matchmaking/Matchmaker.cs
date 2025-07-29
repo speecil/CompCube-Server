@@ -30,10 +30,13 @@ public static class Matchmaker
         if (_clientPool.Count < 2) 
             return;
         
-        var match = new Match.Match(_clientPool[0].Client, _clientPool[1].Client);
+        var playerOne =  _clientPool[0];
+        var playerTwo =  _clientPool[1];
+        
+        var match = new Match.Match(playerOne.Client, playerTwo.Client);
 
-        _clientPool.Remove(_clientPool[1]);
-        _clientPool.Remove(_clientPool[0]);
+        _clientPool.Remove(playerOne);
+        _clientPool.Remove(playerTwo);
         
         ActiveMatches.Add(match);
         OnMatchStarted?.Invoke(match);

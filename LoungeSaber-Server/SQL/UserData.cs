@@ -1,6 +1,7 @@
-﻿using LoungeSaber_Server.Models.Badge;
+﻿using System.Data;
+using System.Data.SQLite;
+using LoungeSaber_Server.Models.Badge;
 using LoungeSaber_Server.Models.Client;
-using Microsoft.Data.Sqlite;
 
 namespace LoungeSaber_Server.SQL;
 
@@ -29,16 +30,18 @@ public class UserData : Database
         var command = _connection.CreateCommand();
         command.CommandText = $"SELECT * FROM userData WHERE userData.id = @id LIMIT 1";
         command.Parameters.AddWithValue("id", userId);
-
         using var reader = command.ExecuteReader();
 
-        while (reader.Read()) 
+        while (reader.Read())
+        {
+            Console.WriteLine(reader.HasRows);
             return GetUserInfoFromReader(reader);
+        }
         
         return null;
     }
 
-    private UserInfo? GetUserInfoFromReader(SqliteDataReader reader)
+    private UserInfo? GetUserInfoFromReader(SQLiteDataReader reader)
     {
         if (reader.FieldCount == 0) 
             return null;
