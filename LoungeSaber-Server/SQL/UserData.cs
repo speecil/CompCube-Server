@@ -14,7 +14,7 @@ public class UserData : Database
     public UserInfo? GetUserByDiscordId(string discordId)
     {
         var command = _connection.CreateCommand();
-        command.CommandText = "SELECT * FROM discord WHERE discordId = @discordId LIMIT 1";
+        command.CommandText = "SELECT * FROM userData WHERE discordId = @discordId LIMIT 1";
         command.Parameters.AddWithValue("discordId", discordId);
         
         using var reader = command.ExecuteReader();
@@ -25,10 +25,20 @@ public class UserData : Database
         return null;
     }
 
+    public void LinkDiscordToUser(string userId, string discordId)
+    {
+        var command = _connection.CreateCommand();
+        command.CommandText = "UPDATE userData SET discordId = @discordId WHERE id = @userId";
+        command.Parameters.AddWithValue("userId", userId);
+        command.Parameters.AddWithValue("discordId", discordId);
+
+        command.ExecuteNonQuery();
+    }
+
     public UserInfo? GetUserById(string userId)
     {
         var command = _connection.CreateCommand();
-        command.CommandText = $"SELECT * FROM userData WHERE userData.id = @id LIMIT 1";
+        command.CommandText = "SELECT * FROM userData WHERE userData.id = @id LIMIT 1";
         command.Parameters.AddWithValue("id", userId);
         using var reader = command.ExecuteReader();
 
@@ -86,7 +96,7 @@ public class UserData : Database
     {
         var command = _connection.CreateCommand();
         command.CommandText = "UPDATE userData SET mmr = @newMmr WHERE userData.id = @id";
-        command.Parameters.AddWithValue("newMmr", user.Mmr + mmrChange);
+        command.Parameters.AddWithValue("newMmr", Math.Max(0, user.Mmr + mmrChange));
         command.Parameters.AddWithValue("id", user.UserId);
         command.ExecuteNonQuery();
         

@@ -1,6 +1,6 @@
-﻿using NetCord;
-using NetCord.Gateway;
-using NetCord.Logging;
+﻿using NetCord.Hosting.Gateway;
+using NetCord.Hosting.Services;
+using NetCord.Hosting.Services.ApplicationCommands;
 
 namespace LoungeSaber_Server.Discord;
 
@@ -8,15 +8,19 @@ public class DiscordBot
 {
     public static void Start()
     {
-        GatewayClient client = new(new BotToken("MTM5OTU4OTYyODU5MTIxNDU5Mw.G8Fc1T.c5bnh5-jul0-BQu-c1QGIJOgr92ifur1fdeJOE"), new GatewayClientConfiguration
-        {
-            Logger = new ConsoleLogger(),
-        });
+        var builder = Host.CreateApplicationBuilder();
+
+        builder.Services.AddDiscordGateway().AddApplicationCommands();
+
+        var host = builder.Build();
+        
+        host.AddModules(typeof(Program).Assembly);
+
+        host.UseGatewayHandlers();
 
         Task.Run(async () =>
         {
-            await client.StartAsync();
-            await Task.Delay(-1);
+            await host.RunAsync();
         });
     }
 }
