@@ -33,6 +33,9 @@ public class MatchCompletedMessageManager
     
     private void OnMatchStarted(Match match) => match.OnMatchEnded += OnMatchEnded;
 
+    private string FormatMatchScore(MatchScore score) =>
+        $"{score.User.Username} - {(score.RelativeScore * 100).ToString("F2", CultureInfo.InvariantCulture)}% {(score.FC ? "FC" : $"{score.Misses}x")}";
+
     private async void OnMatchEnded(MatchResultsData results, Match match)
     {
         try
@@ -56,13 +59,14 @@ public class MatchCompletedMessageManager
                     new()
                     {
                         Name = "Winner",
-                        Value = $"{results.Winner.User.Username} - {(results.Winner.RelativeScore * 100).ToString("F2" , CultureInfo.InvariantCulture)}% {(results.Winner.FC ? "FC" : $"{results.Winner.Misses}x")} ({results.Winner.User.Mmr} -> {results.Winner.User.Mmr + results.MmrChange})",
+                        Value = $"{FormatMatchScore(results.Winner)} ({results.Winner.User.Mmr} -> {results.Winner.User.Mmr + results.MmrChange})",
                         Inline = true
                     },
                     new()
                     {
                         Name = "Loser",
-                        Value = $"{results.Loser.User.Username} - {(results.Loser.RelativeScore * 100).ToString("F2" , CultureInfo.InvariantCulture)}% {(results.Loser.FC ? "FC" : $"{results.Loser.Misses}x")} {(results.Loser.ProMode ? "[PM]" : "")} ({results.Loser.User.Mmr} -> {results.Loser.User.Mmr - results.MmrChange})"
+                        Value = $"{FormatMatchScore(results.Loser)} ({results.Loser.User.Mmr} -> {results.Loser.User.Mmr - results.MmrChange})",
+                        Inline = true
                     }
                 ],
                 Timestamp = DateTime.Now,
