@@ -2,13 +2,14 @@
 using LoungeSaber_Server.BeatSaverApi;
 using LoungeSaber_Server.Gameplay.Match;
 using LoungeSaber_Server.Gameplay.Matchmaking;
+using LoungeSaber_Server.Interfaces;
 using LoungeSaber_Server.Models.Match;
 using NetCord;
 using NetCord.Rest;
 
 namespace LoungeSaber_Server.Discord.Events;
 
-public class MatchCompletedMessageManager(Matchmaker matchmaker, MatchInfoMessageFormatter messageFormatter)
+public class MatchCompletedMessageManager(IMatchmaker matchmaker, MatchInfoMessageFormatter messageFormatter)
 {
     private TextChannel? _channel;
 

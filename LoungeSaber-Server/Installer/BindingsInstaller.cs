@@ -4,6 +4,7 @@ using LoungeSaber_Server.Discord;
 using LoungeSaber_Server.Discord.Commands;
 using LoungeSaber_Server.Discord.Events;
 using LoungeSaber_Server.Gameplay.Matchmaking;
+using LoungeSaber_Server.Interfaces;
 using LoungeSaber_Server.Models.Server;
 using LoungeSaber_Server.SQL;
 
@@ -18,8 +19,12 @@ public static class BindingsInstaller
         services.AddSingleton<UserData>();
 
         services.AddSingleton<ServerStatusManager>();
-        services.AddSingleton<Matchmaker>();
         services.AddSingleton<ConnectionManager>();
+
+        if (Program.Debug)
+            services.AddSingleton<IMatchmaker, DebugMatchmaker>();
+        else 
+            services.AddSingleton<IMatchmaker, Matchmaker>();
         
         services.AddSingleton<MatchCompletedMessageManager>();
         services.AddSingleton<MatchInfoMessageFormatter>();

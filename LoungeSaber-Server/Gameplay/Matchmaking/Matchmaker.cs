@@ -1,4 +1,5 @@
 ﻿using System.Timers;
+using LoungeSaber_Server.Interfaces;
 using LoungeSaber_Server.Models.Client;
 using LoungeSaber_Server.Models.Match;
 using LoungeSaber_Server.Models.Packets.ServerPackets;
@@ -7,7 +8,7 @@ using Timer = System.Timers.Timer;
 
 namespace LoungeSaber_Server.Gameplay.Matchmaking;
 
-public class Matchmaker
+public class Matchmaker : IMatchmaker
 {
     private readonly UserData _userData;
     private readonly MapData _mapData;
@@ -35,19 +36,6 @@ public class Matchmaker
         _connectionManager = connectionmanager;
         
         _mmrThresholdTimer.Elapsed += MatchmakingTimerElapsed;
-        _connectionManager.OnClientJoined += OnClientJoined;
-    }
-
-    private async void OnClientJoined(ConnectedClient client)
-    {
-        try
-        {
-            await AddClientToPool(client);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-        }
     }
 
     private void MatchmakingTimerElapsed(object? sender, ElapsedEventArgs e)
@@ -81,18 +69,8 @@ public class Matchmaker
         ActiveMatches.Remove(match);
     }
 
-    private async Task AddClientToPool(ConnectedClient client)
+    public void AddClientToPool(ConnectedClient client)
     {
-        await Task.Delay(100);
-
-        if (Program.Debug)
-        {
-            var match = new Match.Match(client, new DummyConnectedClient(_userData.GetUserById("0") ?? throw new Exception()), _matchLog, _userData, _mapData);
-            OnMatchStarted?.Invoke(match);
-            await match.StartMatch();
-            return;
-        }
-        
         _clientPool.Add(new MatchmakingClient(client));
     }
 }

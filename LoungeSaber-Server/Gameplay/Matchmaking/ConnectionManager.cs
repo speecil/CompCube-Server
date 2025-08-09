@@ -1,7 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using BeatSaverSharp.Models;
 using LoungeSaber_Server.Models.Client;
 using LoungeSaber_Server.Models.Packets;
 using LoungeSaber_Server.Models.Packets.ServerPackets;

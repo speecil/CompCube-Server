@@ -7,11 +7,14 @@ namespace LoungeSaber_Server
 {
     public class Program
     {
-        public const bool Debug = true;
+        public static bool Debug { get; private set; } = false;
         
         public static async Task Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder();
+            if (args.Contains("--debug"))
+                Debug = true;
+            
+            var builder = WebApplication.CreateBuilder(args);
 
             BindingsInstaller.InstallBindings(builder.Services);
             
