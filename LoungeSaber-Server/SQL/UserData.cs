@@ -1,7 +1,7 @@
 ﻿using System.Data;
 using System.Data.SQLite;
-using LoungeSaber_Server.Models.Badge;
 using LoungeSaber_Server.Models.Client;
+using LoungeSaber_Server.Models.ClientData;
 
 namespace LoungeSaber_Server.SQL;
 

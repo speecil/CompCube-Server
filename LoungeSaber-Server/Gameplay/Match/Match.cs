@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using LoungeSaber_Server.Models.Client;
+using LoungeSaber_Server.Models.ClientData;
 using LoungeSaber_Server.Models.Map;
 using LoungeSaber_Server.Models.Match;
 using LoungeSaber_Server.Models.Packets;

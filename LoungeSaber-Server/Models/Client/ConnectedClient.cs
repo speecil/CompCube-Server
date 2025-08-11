@@ -1,5 +1,6 @@
 ﻿using System.Net.Sockets;
 using System.Text;
+using LoungeSaber_Server.Models.ClientData;
 using LoungeSaber_Server.Models.Packets;
 using LoungeSaber_Server.Models.Packets.UserPackets;
 using Newtonsoft.Json;

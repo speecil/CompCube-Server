@@ -1,4 +1,5 @@
-﻿using LoungeSaber_Server.Models.Packets;
+﻿using LoungeSaber_Server.Models.ClientData;
+using LoungeSaber_Server.Models.Packets;
 using LoungeSaber_Server.Models.Packets.ServerPackets;
 using LoungeSaber_Server.Models.Packets.UserPackets;
 using Newtonsoft.Json;

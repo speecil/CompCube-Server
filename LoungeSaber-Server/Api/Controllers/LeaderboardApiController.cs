@@ -1,4 +1,5 @@
 ﻿using LoungeSaber_Server.Models.Client;
+using LoungeSaber_Server.Models.ClientData;
 using LoungeSaber_Server.SQL;
 using Microsoft.AspNetCore.Mvc;
 

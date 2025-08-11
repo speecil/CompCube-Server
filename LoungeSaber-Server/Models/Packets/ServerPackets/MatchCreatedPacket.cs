@@ -1,4 +1,5 @@
 ﻿using LoungeSaber_Server.Models.Client;
+using LoungeSaber_Server.Models.ClientData;
 using LoungeSaber_Server.Models.Map;
 using LoungeSaber_Server.SQL;
 using Newtonsoft.Json;
