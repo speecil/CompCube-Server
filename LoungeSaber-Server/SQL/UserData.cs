@@ -123,6 +123,18 @@ public class UserData : Database
         
         return null;
     }
+
+    public UserInfo[]? GetAroundUser(string userId)
+    {
+        var users = GetAllUsers();
+
+        if (users.All(i => i?.UserId != userId))
+            return null;
+        
+        var userIdx = users.FindIndex(i => i?.UserId == userId);
+        
+        return users.Slice(Math.Clamp(userIdx - 4, 0, users.Count), Math.Max(users.Count, users.Count)).ToArray();
+    }
     
     public UserInfo[] GetLeaderboardRange(int start, int range)
     {

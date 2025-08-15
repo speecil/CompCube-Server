@@ -18,13 +18,11 @@ public class LeaderboardApiController(UserData userData) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<UserInfo[]> GetAroundUser(string userId)
     {
-        var users = userData.GetAllUsers();
+        var aroundUser = userData.GetAroundUser(userId);
 
-        if (users.All(i => i?.UserId != userId))
+        if (aroundUser == null)
             return NotFound();
-        
-        var userIdx = users.FindIndex(i => i?.UserId == userId);
-        
-        return users.Slice(Math.Clamp(userIdx - 4, 0, users.Count), Math.Max(users.Count, users.Count)).ToArray();
+
+        return aroundUser;
     }
 }

@@ -1,4 +1,5 @@
-﻿using LoungeSaber_Server.SQL;
+﻿using LoungeSaber_Server.Models.ClientData;
+using LoungeSaber_Server.SQL;
 using NetCord.Rest;
 using NetCord.Services.ApplicationCommands;
 using RomanNumerals;
@@ -8,29 +9,42 @@ namespace LoungeSaber_Server.Discord.Commands;
 public class LeaderboardCommands(UserData userData) : ApplicationCommandModule<ApplicationCommandContext>
 {
     [SlashCommand("leaderboard", "leaderboard")]
-    public InteractionMessageProperties Leaderboard(int page = 0)
+    public InteractionMessageProperties Leaderboard(int page = 1)
     {
-        var embed = new EmbedProperties();
+        page -= 1;
 
         var leaderboard = userData.GetLeaderboardRange(page, page + 10);
 
-        embed.Title = $"Leaderboard (Page {page}): ";
-        var leaderboardString = "";
-
-        foreach (var user in leaderboard)
+        return new InteractionMessageProperties
         {
-            var mmrString = $"{user.Mmr} MMR ({user.Division.Division} {new RomanNumeral(user.Division.SubDivision)})";
+            Embeds = [GetLeaderboardEmbedFromUsers(leaderboard)]
+        };
+    }
 
-            var lineString = "\n" + user.Username + " " + 
-                             string.Concat(Enumerable.Repeat("-", Math.Max(1, 50 - user.Username.Length))) + " " + mmrString;
-            leaderboardString += lineString;
-        }
+    [SlashCommand("nearme", "get leaderboard data around you")]
+    public InteractionMessageProperties NearMe()
+    {
+        var userInfo = userData.GetUserByDiscordId(Context.User.Id.ToString());
 
-        embed.Description = leaderboardString;
+        if (userInfo == null)
+            return "Could not get user info! (Did you link your discord account?)";
+
+        var users = userData.GetAroundUser(userInfo.UserId);
+
+        if (users == null)
+            return "Could not find players around you!";
 
         return new InteractionMessageProperties
         {
-            Embeds = [embed]
+            Embeds = [GetLeaderboardEmbedFromUsers(users)]
         };
     }
+
+    private EmbedProperties GetLeaderboardEmbedFromUsers(UserInfo[] userList, int pageNumber = -1) =>
+        new()
+        {
+            Title = pageNumber == -1 ? "Leaderboard" : $"Leaderboard (Page {pageNumber})",
+            Description = userList.Select(user => $"\n{user.Rank}. {user.Username} - {user.Mmr} MMR ({user.Division.Division} {new RomanNumeral(user.Division.SubDivision)})").Aggregate("", (current, lineString) => current + lineString)
+        };
+
 }
