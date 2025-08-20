@@ -8,18 +8,12 @@ namespace LoungeSaber_Server.Gameplay.Match;
 
 public class ScoreManager
 {
-    private readonly ConnectedClient _playerOne;
-    private readonly ConnectedClient _playerTwo;
-
     public event Action<MatchScore, MatchScore>? OnWinnerDetermined;
 
     private readonly List<MatchScore> _matchScores = [];
     
     public ScoreManager(ConnectedClient playerOne, ConnectedClient playerTwo)
     {
-        _playerOne = playerOne;
-        _playerTwo = playerTwo;
-        
         playerOne.OnScoreSubmission += OnScoreSubmitted;
         playerTwo.OnScoreSubmission += OnScoreSubmitted;
     }

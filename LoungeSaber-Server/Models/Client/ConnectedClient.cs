@@ -1,5 +1,6 @@
 ﻿using System.Net.Sockets;
 using System.Text;
+using LoungeSaber_Server.Logging;
 using LoungeSaber_Server.Models.ClientData;
 using LoungeSaber_Server.Models.Packets;
 using LoungeSaber_Server.Models.Packets.UserPackets;
@@ -9,6 +10,8 @@ namespace LoungeSaber_Server.Models.Client;
 
 public class ConnectedClient : IDisposable
 {
+    private readonly Logger _logger;
+    
     private readonly TcpClient _client;
     
     public readonly UserInfo UserInfo;
@@ -19,10 +22,11 @@ public class ConnectedClient : IDisposable
     public event Action<ScoreSubmissionPacket, ConnectedClient>? OnScoreSubmission;
     public event Action<ConnectedClient>? OnDisconnected; 
 
-    public ConnectedClient(TcpClient client, UserInfo userInfo)
+    public ConnectedClient(TcpClient client, UserInfo userInfo, Logger logger)
     {
         _client = client;
         UserInfo = userInfo;
+        _logger = logger;
         
         var listenerThread = new Thread(ListenToClient);
         listenerThread.Start();
@@ -37,7 +41,7 @@ public class ConnectedClient : IDisposable
                 if (!IsConnectionAlive())
                 {
                     DisconnectClient();
-                    Console.WriteLine("user disconnected!");
+                    _logger.Info($"{UserInfo.Username} ({UserInfo.UserId}) disconnected");
                     return;
                 }
                 
@@ -52,8 +56,6 @@ public class ConnectedClient : IDisposable
                 Array.Resize(ref buffer, bytesRead);
                 
                 var json = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
-
-                Console.WriteLine($"Recieved from client: {json}");
                 
                 var packet = UserPacket.Deserialize(json);
 
@@ -62,7 +64,7 @@ public class ConnectedClient : IDisposable
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.Error(e);
             DisconnectClient();
         }
     }
@@ -105,7 +107,6 @@ public class ConnectedClient : IDisposable
 
     public virtual async Task SendPacket(ServerPacket packet)
     {
-        Console.WriteLine($"Sent to {UserInfo.Username}: " + JsonConvert.SerializeObject(packet));
         await _client.GetStream().WriteAsync(packet.SerializeToBytes());
     }
 

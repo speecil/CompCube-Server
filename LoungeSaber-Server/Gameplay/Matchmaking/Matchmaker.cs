@@ -1,5 +1,6 @@
 ﻿using System.Timers;
 using LoungeSaber_Server.Interfaces;
+using LoungeSaber_Server.Logging;
 using LoungeSaber_Server.Models.Client;
 using LoungeSaber_Server.Models.Match;
 using LoungeSaber_Server.Models.Packets.ServerPackets;
@@ -13,7 +14,7 @@ public class Matchmaker : IMatchmaker
     private readonly UserData _userData;
     private readonly MapData _mapData;
     private readonly MatchLog _matchLog;
-    private readonly ConnectionManager _connectionManager;
+    private readonly Logger _logger;
     
     private readonly List<MatchmakingClient> _clientPool = [];
     
@@ -28,12 +29,12 @@ public class Matchmaker : IMatchmaker
         Interval = 5000
     };
 
-    public Matchmaker(UserData userData, MapData mapData, MatchLog matchLog, ConnectionManager connectionmanager)
+    public Matchmaker(UserData userData, MapData mapData, MatchLog matchLog, ConnectionManager connectionmanager, Logger logger)
     {
         _userData = userData;
         _mapData = mapData;
         _matchLog = matchLog;
-        _connectionManager = connectionmanager;
+        _logger = logger;
         
         _mmrThresholdTimer.Elapsed += MatchmakingTimerElapsed;
     }
@@ -46,7 +47,7 @@ public class Matchmaker : IMatchmaker
         var playerOne =  _clientPool[0];
         var playerTwo =  _clientPool[1];
         
-        var match = new Match.Match(playerOne.Client, playerTwo.Client, _matchLog, _userData, _mapData);
+        var match = new Match.Match(playerOne.Client, playerTwo.Client, _matchLog, _userData, _mapData, _logger);
 
         _clientPool.Remove(playerOne);
         _clientPool.Remove(playerTwo);

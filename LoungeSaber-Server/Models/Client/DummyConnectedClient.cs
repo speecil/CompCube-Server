@@ -1,4 +1,5 @@
-﻿using LoungeSaber_Server.Models.ClientData;
+﻿using LoungeSaber_Server.Logging;
+using LoungeSaber_Server.Models.ClientData;
 using LoungeSaber_Server.Models.Packets;
 using LoungeSaber_Server.Models.Packets.ServerPackets;
 using LoungeSaber_Server.Models.Packets.UserPackets;
@@ -6,12 +7,11 @@ using Newtonsoft.Json;
 
 namespace LoungeSaber_Server.Models.Client;
 
-public class DummyConnectedClient(UserInfo userInfo)
-    : ConnectedClient(null!, userInfo)
+public class DummyConnectedClient(UserInfo userInfo, Logger logger)
+    : ConnectedClient(null!, userInfo, logger)
 {
     public override async Task SendPacket(ServerPacket packet)
     {
-        Console.WriteLine($"Debug Recieved: {JsonConvert.SerializeObject(packet)}");
         switch (packet.PacketType)
         {
             case ServerPacket.ServerPacketTypes.MatchCreated:

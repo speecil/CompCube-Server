@@ -1,8 +1,9 @@
-﻿using LoungeSaber_Server.Models.Map;
+﻿using LoungeSaber_Server.Logging;
+using LoungeSaber_Server.Models.Map;
 
 namespace LoungeSaber_Server.SQL;
 
-public class MapData : Database
+public class MapData(Logger logger) : Database
 {
     protected override string DatabaseName => "MapData";
     
@@ -33,13 +34,13 @@ public class MapData : Database
 
             if (!Enum.TryParse<VotingMap.DifficultyType>(reader.GetString(1), out var difficulty))
             {
-                Console.WriteLine($"Could not parse difficulty type for hash {hash}: {reader.GetString(1)}");
+                logger.Error($"Could not parse difficulty type for hash {hash}: {reader.GetString(1)}");
                 continue;
             }
 
             if (!Enum.TryParse<VotingMap.CategoryType>(reader.GetString(2), out var category))
             {
-                Console.WriteLine($"Could not parse category for hash {hash}: {reader.GetString(2)}");
+                logger.Error($"Could not parse category for hash {hash}: {reader.GetString(2)}");
                 continue;
             }
             

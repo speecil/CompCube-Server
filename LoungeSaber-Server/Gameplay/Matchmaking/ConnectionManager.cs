@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using LoungeSaber_Server.Logging;
 using LoungeSaber_Server.Models.Client;
 using LoungeSaber_Server.Models.Packets;
 using LoungeSaber_Server.Models.Packets.ServerPackets;
@@ -12,8 +13,8 @@ namespace LoungeSaber_Server.Gameplay.Matchmaking;
 public class ConnectionManager : IDisposable
 {
     private readonly UserData _userData;
+    private readonly Logger _logger;
     
-    //TODO: change listener ip when not developing
     private readonly TcpListener _listener = new(IPAddress.Any, 8008);
 
     private readonly Thread _listenForClientsThread;
@@ -22,9 +23,10 @@ public class ConnectionManager : IDisposable
 
     public event Action<ConnectedClient>? OnClientJoined;
 
-    public ConnectionManager(UserData userData)
+    public ConnectionManager(UserData userData, Logger logger)
     {
         _userData = userData;
+        _logger = logger;
         
         _listenForClientsThread = new Thread(ListenForClients);
         Start();
@@ -36,6 +38,7 @@ public class ConnectionManager : IDisposable
         _isStarted = true;
         
         _listenForClientsThread.Start();
+        _logger.Info("Started listening for clients");
     }
 
     private async void ListenForClients()
@@ -54,26 +57,27 @@ public class ConnectionManager : IDisposable
                     buffer = buffer[..streamLength];
 
                     var json = Encoding.UTF8.GetString(buffer);
-                    Console.WriteLine(json);
 
                     var packet = UserPacket.Deserialize(json) as JoinRequestPacket ?? throw new Exception("Could not deserialize packet!");
 
-                    var connectedClient = new ConnectedClient(client, _userData.UpdateUserDataOnLogin(packet.UserId, packet.UserName));
+                    var connectedClient = new ConnectedClient(client, _userData.UpdateUserDataOnLogin(packet.UserId, packet.UserName), _logger);
 
                     await connectedClient.SendPacket(new JoinResponsePacket(true, ""));
+                  
+                    _logger.Info($"User {connectedClient.UserInfo.Username} ({connectedClient.UserInfo.UserId})  joined the matchmaking pool");
                     
                     OnClientJoined?.Invoke(connectedClient);
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    _logger.Error(e);
                     client.Close();
                 }
             }
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.Error(e);
         }
     }
 

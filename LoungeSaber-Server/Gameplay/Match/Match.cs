@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using LoungeSaber_Server.Logging;
 using LoungeSaber_Server.Models.Client;
 using LoungeSaber_Server.Models.ClientData;
 using LoungeSaber_Server.Models.Map;
@@ -15,6 +16,7 @@ public class Match
     private readonly MatchLog _matchLog;
     private readonly UserData _userData;
     private readonly MapData _mapData;
+    private readonly Logger _logger; 
     
     public readonly ConnectedClient PlayerOne;
     public readonly ConnectedClient PlayerTwo;
@@ -36,11 +38,13 @@ public class Match
     
     private const int KFactor = 75;
 
-    public Match(ConnectedClient playerOne, ConnectedClient playerTwo, MatchLog matchLog, UserData userData, MapData mapData)
+    public Match(ConnectedClient playerOne, ConnectedClient playerTwo, MatchLog matchLog, UserData userData, MapData mapData, Logger logger)
     {
         _matchLog = matchLog;
         _userData = userData;
         _mapData = mapData;
+        _logger = logger;
+        
         PlayerOne = playerOne;
         PlayerTwo = playerTwo;
 
@@ -83,7 +87,7 @@ public class Match
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.Error(e);
         }
     }
 
@@ -107,7 +111,7 @@ public class Match
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.Error(e);
         }
     }
 
@@ -150,7 +154,7 @@ public class Match
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.Error(e);
         }
     }
 

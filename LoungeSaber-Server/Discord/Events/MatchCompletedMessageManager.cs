@@ -3,13 +3,14 @@ using LoungeSaber_Server.BeatSaverApi;
 using LoungeSaber_Server.Gameplay.Match;
 using LoungeSaber_Server.Gameplay.Matchmaking;
 using LoungeSaber_Server.Interfaces;
+using LoungeSaber_Server.Logging;
 using LoungeSaber_Server.Models.Match;
 using NetCord;
 using NetCord.Rest;
 
 namespace LoungeSaber_Server.Discord.Events;
 
-public class MatchCompletedMessageManager(IMatchmaker matchmaker, MatchInfoMessageFormatter messageFormatter)
+public class MatchCompletedMessageManager(IMatchmaker matchmaker, MatchInfoMessageFormatter messageFormatter, Logger logger)
 {
     private TextChannel? _channel;
 
@@ -51,7 +52,7 @@ public class MatchCompletedMessageManager(IMatchmaker matchmaker, MatchInfoMessa
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            logger.Error(e);
         }
     }
 }

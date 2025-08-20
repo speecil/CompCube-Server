@@ -8,7 +8,6 @@ namespace LoungeSaber_Server.Api.Controllers;
 public class ServerStatusApiController(ServerStatusManager serverStatusManager) : ControllerBase
 {
     //TODO: change these to be read from config file at some point
-    //TODO: make the server stop accepting join requests if the server is not in online mode
     [HttpGet("/api/server/status")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<string> GetServerStatus() => JsonConvert.SerializeObject(serverStatusManager.GetServerStatus());

@@ -86,7 +86,7 @@ public class MatchLog(UserData userData) : Database
         return id;
     }
 
-    public bool IsMatchIdUsed(int matchId)
+    private bool IsMatchIdUsed(int matchId)
     {
         var match = GetMatch(matchId);
 
