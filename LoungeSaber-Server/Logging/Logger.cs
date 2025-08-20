@@ -12,8 +12,12 @@ public class Logger
     
     private void Log(string text, string callerFilePath, ConsoleColor color)
     {
-        Console.ForegroundColor = color;
+        // rider doesn't like it when you change the console color to white
+        // this works fine though
+        if (color == ConsoleColor.White) 
+            Console.ResetColor();
+        
         Console.WriteLine($"[{Path.GetFileNameWithoutExtension(callerFilePath)} {DateTime.UtcNow.ToShortDateString()} {DateTime.UtcNow.ToShortTimeString()}] {text}");
-        Console.ForegroundColor = ConsoleColor.White;
+        Console.ResetColor();
     }
 }

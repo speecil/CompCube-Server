@@ -38,7 +38,7 @@ public class ConnectedClient : IDisposable
         {
             while (_listenToClient)
             {
-                if (!IsConnectionAlive())
+                if (!IsConnectionAlive)
                 {
                     DisconnectClient();
                     _logger.Info($"{UserInfo.Username} ({UserInfo.UserId}) disconnected");
@@ -47,7 +47,8 @@ public class ConnectedClient : IDisposable
                 
                 var buffer = new byte[1024];
 
-                _client.GetStream().Flush();
+                if (IsConnectionAlive)
+                    _client.GetStream().Flush();
                 
                 if (!_client.GetStream().DataAvailable)
                     continue;
@@ -75,17 +76,20 @@ public class ConnectedClient : IDisposable
         OnDisconnected?.Invoke(this);
     }
 
-    private bool IsConnectionAlive()
+    private bool IsConnectionAlive
     {
-        try
+        get
         {
-            var poll = _client.Client.Poll(1, SelectMode.SelectRead) && !_client.GetStream().DataAvailable;
+            try
+            {
+                var poll = _client.Client.Poll(1, SelectMode.SelectRead) && !_client.GetStream().DataAvailable;
 
-            return !poll;
-        }
-        catch (SocketException e)
-        {
-            return e.SocketErrorCode is SocketError.WouldBlock or SocketError.Interrupted;
+                return !poll;
+            }
+            catch (SocketException e)
+            {
+                return e.SocketErrorCode is SocketError.WouldBlock or SocketError.Interrupted;
+            }
         }
     }
 

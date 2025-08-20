@@ -56,6 +56,8 @@ public class Match
 
     public async Task StartMatch()
     {
+        _logger.Info($"Match started between {PlayerOne.UserInfo.Username} and {PlayerTwo.UserInfo.Username} ({_id})");
+        
         PlayerOne.OnDisconnected += OnPlayerDisconnected;
         PlayerTwo.OnDisconnected += OnPlayerDisconnected;
         
@@ -82,8 +84,8 @@ public class Match
             
             await winnerClient.SendPacket(matchResultsPacket);
             await loserClient.SendPacket(matchResultsPacket);
-        
-            OnMatchEnded?.Invoke(matchResultsData, this);
+            
+            EndMatch(matchResultsData);
         }
         catch (Exception e)
         {
@@ -119,6 +121,8 @@ public class Match
     {
         PlayerOne.OnDisconnected -= OnPlayerDisconnected;
         PlayerTwo.OnDisconnected -= OnPlayerDisconnected;
+        
+        _logger.Info($"Match between {PlayerOne.UserInfo.Username} and {PlayerTwo.UserInfo.Username} concluded ({_id})");
         
         PlayerOne.StopListeningToClient();
         PlayerTwo.StopListeningToClient();

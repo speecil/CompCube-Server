@@ -64,7 +64,7 @@ public class ConnectionManager : IDisposable
 
                     await connectedClient.SendPacket(new JoinResponsePacket(true, ""));
                   
-                    _logger.Info($"User {connectedClient.UserInfo.Username} ({connectedClient.UserInfo.UserId})  joined the matchmaking pool");
+                    _logger.Info($"User {connectedClient.UserInfo.Username} ({connectedClient.UserInfo.UserId}) joined the matchmaking pool");
                     
                     OnClientJoined?.Invoke(connectedClient);
                 }
