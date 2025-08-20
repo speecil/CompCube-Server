@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using LoungeSaber_Server.Models.Match;
+using Newtonsoft.Json;
 
 namespace LoungeSaber_Server.Models.Packets.UserPackets;
 
@@ -30,4 +31,6 @@ public class ScoreSubmissionPacket : UserPacket
         MissCount = missCount;
         FullCombo = fullCombo;
     }
+
+    public Score GetScore() => new Score(Score, (float) Score / MaxScore, ProMode, MissCount, FullCombo);
 }
