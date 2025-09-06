@@ -22,13 +22,6 @@ public class Matchmaker : IMatchmaker
 
     public event Action<Match.Match>? OnMatchStarted;
 
-    private readonly Timer _mmrThresholdTimer = new Timer
-    {
-        Enabled = true,
-        AutoReset = true,
-        Interval = 5000
-    };
-
     public Matchmaker(UserData userData, MapData mapData, MatchLog matchLog, ConnectionManager connectionmanager, Logger logger)
     {
         _userData = userData;
@@ -36,31 +29,7 @@ public class Matchmaker : IMatchmaker
         _matchLog = matchLog;
         _logger = logger;
         
-        _mmrThresholdTimer.Elapsed += MatchmakingTimerElapsed;
-    }
-
-    private void MatchmakingTimerElapsed(object? sender, ElapsedEventArgs e)
-    {
-        if (_clientPool.Count < 2) 
-            return;
-        
-        var playerOne =  _clientPool[0];
-        var playerTwo =  _clientPool[1];
-        
-        var match = new Match.Match(playerOne.Client, playerTwo.Client, _matchLog, _userData, _mapData, _logger);
-
-        _clientPool.Remove(playerOne);
-        _clientPool.Remove(playerTwo);
-        
-        ActiveMatches.Add(match);
-        OnMatchStarted?.Invoke(match);
-        
-        match.OnMatchEnded += OnMatchEnded;
-        
-        Task.Run(async () =>
-        {
-            await match.StartMatch();
-        });
+        connectionmanager.OnClientJoined += AddClientToPool;
     }
 
     private void OnMatchEnded(MatchResultsData results, Match.Match match)
@@ -70,8 +39,23 @@ public class Matchmaker : IMatchmaker
         ActiveMatches.Remove(match);
     }
 
-    public void AddClientToPool(ConnectedClient client)
+    public async void AddClientToPool(ConnectedClient client)
     {
-        _clientPool.Add(new MatchmakingClient(client));
+        try
+        {
+            _clientPool.Add(new MatchmakingClient(client));
+
+            if (_clientPool.Count != 2) 
+                return;
+            
+            var match = new Match.Match(_clientPool[0].Client, _clientPool[1].Client, _matchLog, _userData, _mapData, _logger);
+            _clientPool.Clear();
+            await match.StartMatch();
+            OnMatchStarted?.Invoke(match);
+        }
+        catch (Exception e)
+        {
+            _logger.Error(e);
+        }
     }
 }

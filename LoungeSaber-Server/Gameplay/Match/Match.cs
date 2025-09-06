@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using LoungeSaber_Server.Logging;
+﻿using LoungeSaber_Server.Logging;
 using LoungeSaber_Server.Models.Client;
 using LoungeSaber_Server.Models.ClientData;
 using LoungeSaber_Server.Models.Map;
@@ -16,7 +15,7 @@ public class Match
     private readonly MatchLog _matchLog;
     private readonly UserData _userData;
     private readonly MapData _mapData;
-    private readonly Logger _logger; 
+    private readonly Logger _logger;
     
     public readonly ConnectedClient PlayerOne;
     public readonly ConnectedClient PlayerTwo;
@@ -124,8 +123,8 @@ public class Match
         
         _logger.Info($"Match between {PlayerOne.UserInfo.Username} and {PlayerTwo.UserInfo.Username} concluded ({_id})");
         
-        PlayerOne.StopListeningToClient();
-        PlayerTwo.StopListeningToClient();
+        PlayerOne.Disconnect();
+        PlayerTwo.Disconnect();
         
         _matchLog.AddMatchToTable(results);
         OnMatchEnded?.Invoke(results, this);

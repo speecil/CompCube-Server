@@ -72,7 +72,7 @@ public class ConnectedClient : IDisposable
 
     private void DisconnectClient()
     {
-        StopListeningToClient();
+        Disconnect();
         OnDisconnected?.Invoke(this);
     }
 
@@ -114,7 +114,7 @@ public class ConnectedClient : IDisposable
         await _client.GetStream().WriteAsync(packet.SerializeToBytes());
     }
 
-    public virtual void StopListeningToClient()
+    public virtual void Disconnect()
     {
         _listenToClient = false;
         _client.Close();

@@ -36,7 +36,7 @@ public class DummyConnectedClient(UserInfo userInfo, Logger logger)
         }
     }
 
-    public override void StopListeningToClient() {}
+    public override void Disconnect() {}
 
     protected override void ListenToClient() {}
 }
