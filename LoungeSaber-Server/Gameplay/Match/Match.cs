@@ -101,9 +101,6 @@ public class Match
             
             var mmrChange = GetMmrChange(winner, loser);
             
-            _userData.ApplyMmrChange(client.UserInfo, -mmrChange - MmrLossOnDisconnect);
-            _userData.ApplyMmrChange(GetOppositeClient(client).UserInfo, mmrChange);
-            
             OnPlayerPunished?.Invoke(client, 50, "Leaving Match Early");
             
             await GetOppositeClient(client).SendPacket(new PrematureMatchEndPacket("OpponentDisconnected"));
@@ -128,6 +125,16 @@ public class Match
         
         _matchLog.AddMatchToTable(results);
         OnMatchEnded?.Invoke(results, this);
+
+        _userData.ApplyMmrChange(results.Winner.User, results.MmrChange);
+        
+        if (results.Premature)
+        {
+            _userData.ApplyMmrChange(results.Loser.User, -results.MmrChange - MmrLossOnDisconnect);
+            return;
+        }
+        
+        _userData.ApplyMmrChange(results.Loser.User, -results.MmrChange);
     }
 
     private async void OnUserVoted(VotePacket vote, ConnectedClient client)
