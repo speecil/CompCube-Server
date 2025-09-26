@@ -14,17 +14,13 @@ public class Match
 {
     private readonly MatchLog _matchLog;
     private readonly UserData _userData;
-    private readonly MapData _mapData;
     private readonly Logger _logger;
     
     public readonly ConnectedClient PlayerOne;
     public readonly ConnectedClient PlayerTwo;
 
-    private readonly List<(VotingMap, ConnectedClient)> _userVotes = [];
-
     private readonly ScoreManager _scoreManager;
-
-    private readonly VotingMap[] _mapSelections;
+    private readonly VoteManager _voteManager;
 
     private VotingMap? _selectedMap;
     
@@ -41,16 +37,15 @@ public class Match
     {
         _matchLog = matchLog;
         _userData = userData;
-        _mapData = mapData;
         _logger = logger;
         
         PlayerOne = playerOne;
         PlayerTwo = playerTwo;
 
         _scoreManager = new ScoreManager(playerOne, playerTwo);
+        _voteManager = new VoteManager(playerOne, playerTwo, mapData);
         
         _id = matchLog.GetValidMatchId();
-        _mapSelections = GetRandomMapSelections(3);
     }
 
     public async Task StartMatch()
@@ -59,14 +54,34 @@ public class Match
         
         PlayerOne.OnDisconnected += OnPlayerDisconnected;
         PlayerTwo.OnDisconnected += OnPlayerDisconnected;
-        
-        PlayerOne.OnUserVoted += OnUserVoted;
-        PlayerTwo.OnUserVoted += OnUserVoted;
+
+        _voteManager.OnClientVoted += OnUserVoted;
+        _voteManager.OnMapDetermined += OnMapDetermined;
         
         _scoreManager.OnWinnerDetermined += OnWinnerDetermined;
         
-        await PlayerOne.SendPacket(new MatchCreatedPacket(_mapSelections, PlayerTwo.UserInfo));
-        await PlayerTwo.SendPacket(new MatchCreatedPacket(_mapSelections, PlayerOne.UserInfo));
+        await PlayerOne.SendPacket(new MatchCreatedPacket(_voteManager.VotingOptions, PlayerTwo.UserInfo));
+        await PlayerTwo.SendPacket(new MatchCreatedPacket(_voteManager.VotingOptions, PlayerOne.UserInfo));
+    }
+
+    private async void OnMapDetermined(VotingMap map)
+    {
+        try
+        {
+            _selectedMap = map;
+        
+            PlayerOne.OnScoreSubmission += OnScoreSubmitted;
+            PlayerTwo.OnScoreSubmission += OnScoreSubmitted;
+
+            await Task.Delay(3000);
+
+            SendToBothClients(new MatchStartedPacket(_selectedMap, DateTime.UtcNow.AddSeconds(15),
+                DateTime.UtcNow.AddSeconds(25)));
+        }
+        catch (Exception e)
+        {
+            _logger.Error(e);
+        }
     }
 
     private async void OnWinnerDetermined(MatchScore winner, MatchScore loser)
@@ -137,30 +152,11 @@ public class Match
         _userData.ApplyMmrChange(results.Loser.User, -results.MmrChange);
     }
 
-    private async void OnUserVoted(VotePacket vote, ConnectedClient client)
+    private async void OnUserVoted(ConnectedClient client, int voteIdx)
     {
         try
         {
-            client.OnUserVoted -= OnUserVoted;
-        
-            _userVotes.Add((_mapSelections[vote.VoteIndex], client));
-
-            await GetOppositeClient(client).SendPacket(new OpponentVotedPacket(vote.VoteIndex));
-
-            if (_userVotes.Count != 2) 
-                return;
-            
-            var random = new Random();
-            
-            _selectedMap = _userVotes[random.Next(_userVotes.Count)].Item1;
-            
-            PlayerOne.OnScoreSubmission += OnScoreSubmitted;
-            PlayerTwo.OnScoreSubmission += OnScoreSubmitted;
-
-            await Task.Delay(3000);
-
-            SendToBothClients(new MatchStartedPacket(_selectedMap, DateTime.UtcNow.AddSeconds(15),
-                DateTime.UtcNow.AddSeconds(25)));
+            await GetOppositeClient(client).SendPacket(new OpponentVotedPacket(voteIdx));
         }
         catch (Exception e)
         {
@@ -192,30 +188,6 @@ public class Match
         {
             await PlayerTwo.SendPacket(packet);
         });
-    }
-
-    private VotingMap[] GetRandomMapSelections(int amount)
-    {
-        var random = new Random();
-        
-        var selections = new List<VotingMap>();
-        
-        var allMaps = _mapData.GetAllMaps();
-
-        while (selections.Count < amount)
-        {
-            var randomMap = allMaps[random.Next(0, allMaps.Count)];
-            
-            if (selections.Any(i => i.Category == randomMap.Category)) 
-                continue;
-            
-            if (selections.Any(i => i.Hash == randomMap.Hash)) 
-                continue;
-            
-            selections.Add(randomMap);
-        }
-
-        return selections.ToArray();
     }
 
     private ConnectedClient GetOppositeClient(ConnectedClient client) => client.UserInfo.UserId == PlayerOne.UserInfo.UserId ? PlayerTwo : PlayerOne;

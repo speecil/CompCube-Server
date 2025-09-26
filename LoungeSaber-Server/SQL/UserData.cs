@@ -158,7 +158,6 @@ public class UserData : Database
             updateUserNameCommand.Parameters.AddWithValue("userId", userId);
             updateUserNameCommand.ExecuteNonQuery();
             
-            // avoid fetching from db twice in a row
             return GetUserById(userId) ??  throw new Exception("Could not find updated user!");
         }
         
