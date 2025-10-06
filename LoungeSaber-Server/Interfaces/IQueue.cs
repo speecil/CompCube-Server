@@ -3,7 +3,7 @@ using LoungeSaber_Server.Models.Client;
 
 namespace LoungeSaber_Server.Interfaces;
 
-public interface IMatchmaker
+public interface IQueue
 {
     public string QueueName { get; }
     

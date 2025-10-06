@@ -10,7 +10,7 @@ using NetCord.Rest;
 
 namespace LoungeSaber_Server.Discord.Events;
 
-public class MatchCompletedMessageManager(IMatchmaker matchmaker, MatchInfoMessageFormatter messageFormatter, Logger logger)
+public class MatchCompletedMessageManager(IQueue queue, MatchInfoMessageFormatter messageFormatter, Logger logger)
 {
     private TextChannel? _channel;
 
@@ -21,12 +21,12 @@ public class MatchCompletedMessageManager(IMatchmaker matchmaker, MatchInfoMessa
         
         _channel = channel;
         
-        matchmaker.OnMatchStarted += OnMatchStarted;
+        queue.OnMatchStarted += OnMatchStarted;
     }
 
     public void Stop()
     {
-        matchmaker.OnMatchStarted -= OnMatchStarted;
+        queue.OnMatchStarted -= OnMatchStarted;
     }
     
     private void OnMatchStarted(Match match) => match.OnMatchEnded += OnMatchEnded;

@@ -5,7 +5,7 @@ using LoungeSaber_Server.SQL;
 
 namespace LoungeSaber_Server.Gameplay.Matchmaking;
 
-public class DebugMatchmaker : IMatchmaker, IDisposable
+public class DebugQueue : IQueue, IDisposable
 {
     private readonly UserData _userData;
     private readonly MatchLog _matchLog;
@@ -14,7 +14,7 @@ public class DebugMatchmaker : IMatchmaker, IDisposable
 
     private readonly ConnectionManager _connectionManager;
     
-    public DebugMatchmaker(UserData userData, MatchLog matchLog, MapData mapData, ConnectionManager connectionManager, Logger logger)
+    public DebugQueue(UserData userData, MatchLog matchLog, MapData mapData, ConnectionManager connectionManager, Logger logger)
     {
         _mapData = mapData;
         _userData = userData;

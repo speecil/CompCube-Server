@@ -63,9 +63,9 @@ public class Program
         services.AddSingleton<ConnectionManager>();
 
         if (Program.Debug)
-            services.AddSingleton<IMatchmaker, DebugMatchmaker>();
+            services.AddSingleton<IQueue, DebugQueue>();
         else 
-            services.AddSingleton<IMatchmaker, Matchmaker>();
+            services.AddSingleton<IQueue, Queue>();
         
         services.AddSingleton<MatchCompletedMessageManager>();
         services.AddSingleton<MatchInfoMessageFormatter>();

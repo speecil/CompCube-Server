@@ -65,7 +65,7 @@ public class ConnectionManager : IDisposable
 
                     var connectedClient = new ConnectedClient(client, _userData.UpdateUserDataOnLogin(packet.UserId, packet.UserName), _logger);
 
-                    var targetMatchmaker = _serviceProvider.GetServices<IMatchmaker>().FirstOrDefault(i => i.QueueName == packet.Queue);
+                    var targetMatchmaker = _serviceProvider.GetServices<IQueue>().FirstOrDefault(i => i.QueueName == packet.Queue);
 
                     if (targetMatchmaker == null)
                     {
