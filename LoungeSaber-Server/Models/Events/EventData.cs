@@ -1,4 +1,4 @@
-﻿namespace LoungeSaber_Server.Gameplay.Events;
+﻿namespace LoungeSaber_Server.Models.Events;
 
 public class EventData(string eventName, string displayName, string description)
 {

@@ -1,4 +1,5 @@
 ﻿using LoungeSaber_Server.Logging;
+using LoungeSaber_Server.Models.Events;
 using LoungeSaber_Server.Models.Match;
 using Newtonsoft.Json;
 

@@ -1,4 +1,5 @@
 ﻿using LoungeSaber_Server.Interfaces;
+using LoungeSaber_Server.Models.Events;
 using LoungeSaber_Server.Models.Match;
 
 namespace LoungeSaber_Server.Gameplay.Events;
