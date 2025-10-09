@@ -26,6 +26,8 @@ public class Program
             
         var builder = WebApplication.CreateBuilder(args);
         
+        InstallBindings(builder.Services);
+        
         builder.Services.AddDiscordGateway().AddApplicationCommands();
 
         builder.Services.AddControllers();
@@ -46,8 +48,6 @@ public class Program
         host.AddModules(typeof(Program).Assembly);
 
         host.UseGatewayHandlers();
-        
-        InstallBindings(builder.Services);
 
         host.Run();
     }

@@ -6,11 +6,12 @@ namespace LoungeSaber_Server.Logging;
 
 public class Logger
 {
-    private string LogsPath => Path.Combine(typeof(Program).Assembly.Location, "Logs");
+    private string LogsPath => Path.Combine(Directory.GetCurrentDirectory(), "Logs");
     
     public Logger()
     {
-        Directory.CreateDirectory(LogsPath);
+        if (!Directory.Exists(LogsPath))
+            Directory.CreateDirectory(LogsPath);
 
         if (File.Exists(Path.Combine(LogsPath, "latest.log")))
         {

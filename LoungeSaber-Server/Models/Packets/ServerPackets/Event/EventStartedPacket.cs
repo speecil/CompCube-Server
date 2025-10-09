@@ -1,6 +1,9 @@
-﻿namespace LoungeSaber_Server.Models.Packets.ServerPackets.Event;
+﻿using Newtonsoft.Json;
 
-public class EventStartedPacket : ServerPacket
+namespace LoungeSaber_Server.Models.Packets.ServerPackets.Event;
+
+[method: JsonConstructor]
+public class EventStartedPacket() : ServerPacket
 {
     public override ServerPacketTypes PacketType => ServerPacketTypes.EventStarted;
 }

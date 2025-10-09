@@ -5,13 +5,13 @@ using Newtonsoft.Json;
 
 namespace LoungeSaber_Server.Gameplay.Events;
 
-public class EventManager : IDisposable
+public class EventManager
 {
     private readonly Logger _logger;
     
     public event Action<MatchResultsData, Match.Match>? EventMatchEnded;
     
-    private List<Event> _events;
+    private readonly List<Event> _events;
     
     public IReadOnlyList<Event> ActiveEvents => _events;
     
@@ -22,6 +22,11 @@ public class EventManager : IDisposable
         _logger = logger;
         
         _events = ReadEventsFromFile().Select(i => new Event(i)).ToList();
+
+        AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
+        {
+            SaveEventsToFile();
+        };
     }
 
     public void AddEvent(Event e)
@@ -56,17 +61,11 @@ public class EventManager : IDisposable
         
         var deserializedEventData = JsonConvert.DeserializeObject<EventData[]>(File.ReadAllText(PathToEventsFile));
 
-        if (deserializedEventData == null)
-        {
-            _logger.Info("Could not read events from file.");
-            return [];
-        }
+        if (deserializedEventData != null) 
+            return deserializedEventData;
         
-        return deserializedEventData;
-    }
+        _logger.Info("Could not read events from file.");
+        return [];
 
-    public void Dispose()
-    {
-        SaveEventsToFile();
     }
 }
