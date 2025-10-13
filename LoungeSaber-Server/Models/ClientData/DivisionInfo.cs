@@ -16,7 +16,6 @@ public class DivisionInfo(DivisionInfo.DivisionName division, int subDivision, s
     {
         if (IsInRangeOfValue(0, mmr, 999))
             return new DivisionInfo(DivisionName.Iron, GetSubDivision(mmr, 1000), "#E4E4E6", false);
-
         if (IsInRangeOfValue(1000, mmr, 1999))
             return new DivisionInfo(DivisionName.Bronze, GetSubDivision(mmr - 1000, 1000), "#CE8946", false);
 

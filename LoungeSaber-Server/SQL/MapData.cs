@@ -18,6 +18,17 @@ public class MapData(Logger logger) : Database
         createDbCommand.ExecuteNonQuery();
     }
 
+    public void AddMap(VotingMap votingMap)
+    {
+        var command = Connection.CreateCommand();
+        command.CommandText = "INSERT INTO mapData VALUES (@hash, @difficulty, @category)";
+        command.Parameters.AddWithValue("hash", votingMap.Hash);
+        command.Parameters.AddWithValue("difficulty", votingMap.Difficulty.ToString());
+        command.Parameters.AddWithValue("category", votingMap.Category.ToString());
+
+        command.ExecuteNonQuery();
+    }
+
     public List<VotingMap> GetAllMaps()
     {
         var maps = new List<VotingMap>();
