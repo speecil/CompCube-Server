@@ -58,6 +58,8 @@ public class ConnectionManager : IDisposable
                     buffer = buffer[..streamLength];
 
                     var json = Encoding.UTF8.GetString(buffer);
+                    
+                    _logger.Info(json);
 
                     var packet = UserPacket.Deserialize(json) as JoinRequestPacket ?? throw new Exception("Could not deserialize packet!");
 
@@ -65,6 +67,9 @@ public class ConnectionManager : IDisposable
 
                     var targetMatchmaker = _queueManager.GetQueueFromName(packet.Queue);
 
+                    if (packet.Queue == "")
+                        targetMatchmaker = _queueManager.GetQueueFromName("standard");
+                    
                     if (targetMatchmaker == null)
                     {
                         await connectedClient.SendPacket(new JoinResponsePacket(false, "Invalid Queue"));

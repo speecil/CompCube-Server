@@ -78,6 +78,9 @@ public class VoteManager
 
     private void DetermineVote(VotingMap map)
     {
+        if (MapAlreadyDetermined)
+            return;
+        
         OnMapDetermined?.Invoke(map);
         MapAlreadyDetermined = true;
     }

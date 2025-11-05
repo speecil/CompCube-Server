@@ -89,9 +89,12 @@ public class ConnectedClient : IConnectedClient, IDisposable
 
                 return !poll;
             }
-            catch (SocketException e)
+            catch (Exception e)
             {
-                return e.SocketErrorCode is SocketError.WouldBlock or SocketError.Interrupted;
+                if (e is SocketException socketException)
+                    return socketException.SocketErrorCode is SocketError.WouldBlock or SocketError.Interrupted;
+
+                return false;
             }
         }
     }
