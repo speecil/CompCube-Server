@@ -1,5 +1,6 @@
 ﻿using LoungeSaber_Server.Discord.Events;
 using LoungeSaber_Server.Models.Server;
+using LoungeSaber_Server.Networking.ServerStatus;
 using NetCord;
 using NetCord.Services.ApplicationCommands;
 

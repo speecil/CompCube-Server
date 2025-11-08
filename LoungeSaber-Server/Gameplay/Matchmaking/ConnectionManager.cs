@@ -7,6 +7,7 @@ using LoungeSaber_Server.Models.Client;
 using LoungeSaber_Server.Models.Packets;
 using LoungeSaber_Server.Models.Packets.ServerPackets;
 using LoungeSaber_Server.Models.Packets.UserPackets;
+using LoungeSaber_Server.Networking.Client;
 using LoungeSaber_Server.SQL;
 
 namespace LoungeSaber_Server.Gameplay.Matchmaking;

@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace LoungeSaber_Server.Models.Server;
+﻿namespace LoungeSaber_Server.Networking.ServerStatus;
 
 public class ServerStatusManager
 {
@@ -24,5 +22,5 @@ public class ServerStatusManager
         Maintenance
     }
     
-    public ServerStatus GetServerStatus() => new(["1.39.1", "1.40.8", "1.40.5"], ["1.0.0"], State);
+    public Models.Server.ServerStatus GetServerStatus() => new(["1.39.1", "1.40.8", "1.40.5"], ["1.0.0"], State);
 }

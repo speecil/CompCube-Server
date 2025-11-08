@@ -7,7 +7,7 @@ using LoungeSaber_Server.Gameplay.Events;
 using LoungeSaber_Server.Gameplay.Matchmaking;
 using LoungeSaber_Server.Interfaces;
 using LoungeSaber_Server.Logging;
-using LoungeSaber_Server.Models.Server;
+using LoungeSaber_Server.Networking.ServerStatus;
 using LoungeSaber_Server.SQL;
 using NetCord.Hosting.Gateway;
 using NetCord.Hosting.Services;
