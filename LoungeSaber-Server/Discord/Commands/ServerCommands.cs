@@ -1,5 +1,5 @@
-﻿using LoungeSaber_Server.Discord.Events;
-using LoungeSaber_Server.Models.Server;
+﻿using CompCube_Models.Models.Server;
+using LoungeSaber_Server.Discord.Events;
 using LoungeSaber_Server.Networking.ServerStatus;
 using NetCord;
 using NetCord.Services.ApplicationCommands;
@@ -11,7 +11,7 @@ public class ServerCommands(ServerStatusManager serverStatusManager, MatchComple
     [SlashCommand("openserver", "yeah", DefaultGuildUserPermissions = Permissions.Administrator, Contexts = [InteractionContextType.Guild])]
     public async Task<string> OpenServer()
     {
-        serverStatusManager.State = ServerStatusManager.ServerState.Online;
+        serverStatusManager.State = ServerState.State.Online;
 
         var channel = await Context.Client.Rest.GetChannelAsync(1400279911008174282) as TextChannel;
 

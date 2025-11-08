@@ -1,9 +1,9 @@
 ﻿using System.Globalization;
+using CompCube_Models.Models.Match;
 using LoungeSaber_Server.Gameplay.Match;
 using LoungeSaber_Server.Gameplay.Matchmaking;
 using LoungeSaber_Server.Interfaces;
 using LoungeSaber_Server.Logging;
-using LoungeSaber_Server.Models.Match;
 using NetCord;
 using NetCord.Rest;
 

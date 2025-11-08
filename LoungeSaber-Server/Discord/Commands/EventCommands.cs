@@ -1,6 +1,6 @@
-﻿using LoungeSaber_Server.Gameplay.Events;
+﻿using CompCube_Models.Models.Events;
+using LoungeSaber_Server.Gameplay.Events;
 using LoungeSaber_Server.Logging;
-using LoungeSaber_Server.Models.Events;
 using NetCord.Rest;
 using NetCord.Services.ApplicationCommands;
 

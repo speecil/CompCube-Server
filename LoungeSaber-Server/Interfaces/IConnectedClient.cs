@@ -1,7 +1,6 @@
-﻿using LoungeSaber_Server.Models.Client;
-using LoungeSaber_Server.Models.ClientData;
-using LoungeSaber_Server.Models.Packets;
-using LoungeSaber_Server.Models.Packets.UserPackets;
+﻿using CompCube_Models.Models.ClientData;
+using CompCube_Models.Models.Packets;
+using CompCube_Models.Models.Packets.UserPackets;
 
 namespace LoungeSaber_Server.Interfaces;
 

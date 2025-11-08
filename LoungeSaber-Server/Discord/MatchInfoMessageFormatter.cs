@@ -1,6 +1,6 @@
 ﻿using System.Globalization;
+using CompCube_Models.Models.Match;
 using LoungeSaber_Server.Api.BeatSaver;
-using LoungeSaber_Server.Models.Match;
 using NetCord;
 using NetCord.Rest;
 

@@ -1,12 +1,10 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using LoungeSaber_Server.Interfaces;
+using CompCube_Models.Models.Packets;
+using CompCube_Models.Models.Packets.ServerPackets;
+using CompCube_Models.Models.Packets.UserPackets;
 using LoungeSaber_Server.Logging;
-using LoungeSaber_Server.Models.Client;
-using LoungeSaber_Server.Models.Packets;
-using LoungeSaber_Server.Models.Packets.ServerPackets;
-using LoungeSaber_Server.Models.Packets.UserPackets;
 using LoungeSaber_Server.Networking.Client;
 using LoungeSaber_Server.SQL;
 

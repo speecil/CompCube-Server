@@ -1,7 +1,5 @@
-﻿using System.Data;
-using System.Data.SQLite;
-using LoungeSaber_Server.Models.Client;
-using LoungeSaber_Server.Models.ClientData;
+﻿using System.Data.SQLite;
+using CompCube_Models.Models.ClientData;
 
 namespace LoungeSaber_Server.SQL;
 

@@ -1,5 +1,5 @@
-﻿using LoungeSaber_Server.Logging;
-using LoungeSaber_Server.Models.Map;
+﻿using CompCube_Models.Models.Map;
+using LoungeSaber_Server.Logging;
 
 namespace LoungeSaber_Server.SQL;
 
@@ -49,11 +49,7 @@ public class MapData(Logger logger) : Database
                 continue;
             }
 
-            if (!Enum.TryParse<VotingMap.CategoryType>(reader.GetString(2), out var category))
-            {
-                logger.Error($"Could not parse category for hash {hash}: {reader.GetString(2)}");
-                continue;
-            }
+            var category = reader.GetString(2);
             
             maps.Add(new VotingMap(hash, difficulty, category));
         }

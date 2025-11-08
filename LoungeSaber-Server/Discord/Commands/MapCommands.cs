@@ -1,5 +1,5 @@
-﻿using LoungeSaber_Server.Api.BeatSaver;
-using LoungeSaber_Server.Models.Map;
+﻿using CompCube_Models.Models.Map;
+using LoungeSaber_Server.Api.BeatSaver;
 using LoungeSaber_Server.SQL;
 using NetCord.Rest;
 using NetCord.Services.ApplicationCommands;
@@ -18,11 +18,8 @@ public class MapCommands(BeatSaverApiWrapper beatSaverApi, MapData mapData) : Ap
 
         if (!Enum.TryParse<VotingMap.DifficultyType>(diff, out var difficulty))
             return "Could not parse difficulty!";
-
-        if (!Enum.TryParse<VotingMap.CategoryType>(category, out var mapCategory))
-            return "Could not parse category!";
         
-        mapData.AddMap(new VotingMap(beatmap.LatestVersion.Hash, difficulty, mapCategory));
+        mapData.AddMap(new VotingMap(beatmap.LatestVersion.Hash, difficulty, category));
 
         return $"{beatmap.Name} added to pool.";
     }

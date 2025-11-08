@@ -1,5 +1,5 @@
-﻿using LoungeSaber_Server.Gameplay.Events;
-using LoungeSaber_Server.Models.Events;
+﻿using CompCube_Models.Models.Events;
+using LoungeSaber_Server.Gameplay.Events;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LoungeSaber_Server.Api.Controllers;

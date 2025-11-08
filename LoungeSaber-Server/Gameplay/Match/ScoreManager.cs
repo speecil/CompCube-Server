@@ -1,9 +1,6 @@
-﻿using LoungeSaber_Server.Interfaces;
-using LoungeSaber_Server.Models.Client;
-using LoungeSaber_Server.Models.ClientData;
-using LoungeSaber_Server.Models.Map;
-using LoungeSaber_Server.Models.Match;
-using LoungeSaber_Server.Models.Packets.UserPackets;
+﻿using CompCube_Models.Models.Match;
+using CompCube_Models.Models.Packets.UserPackets;
+using LoungeSaber_Server.Interfaces;
 
 namespace LoungeSaber_Server.Gameplay.Match;
 

@@ -1,6 +1,6 @@
-﻿using LoungeSaber_Server.Logging;
-using LoungeSaber_Server.Models.Events;
-using LoungeSaber_Server.Models.Match;
+﻿using CompCube_Models.Models.Events;
+using CompCube_Models.Models.Match;
+using LoungeSaber_Server.Logging;
 using Newtonsoft.Json;
 
 namespace LoungeSaber_Server.Gameplay.Events;

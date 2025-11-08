@@ -1,5 +1,4 @@
-﻿using LoungeSaber_Server.Models.Server;
-using LoungeSaber_Server.Networking.ServerStatus;
+﻿using LoungeSaber_Server.Networking.ServerStatus;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 

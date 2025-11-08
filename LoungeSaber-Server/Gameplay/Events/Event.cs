@@ -1,8 +1,8 @@
-﻿using LoungeSaber_Server.Interfaces;
-using LoungeSaber_Server.Models.Events;
-using LoungeSaber_Server.Models.Match;
-using LoungeSaber_Server.Models.Packets;
-using LoungeSaber_Server.Models.Packets.ServerPackets.Event;
+﻿using CompCube_Models.Models.Events;
+using CompCube_Models.Models.Match;
+using CompCube_Models.Models.Packets;
+using CompCube_Models.Models.Packets.ServerPackets.Event;
+using LoungeSaber_Server.Interfaces;
 
 namespace LoungeSaber_Server.Gameplay.Events;
 

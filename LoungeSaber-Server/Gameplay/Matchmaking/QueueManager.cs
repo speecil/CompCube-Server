@@ -1,7 +1,7 @@
-﻿using LoungeSaber_Server.Gameplay.Events;
+﻿using CompCube_Models.Models.Match;
+using LoungeSaber_Server.Gameplay.Events;
 using LoungeSaber_Server.Interfaces;
 using LoungeSaber_Server.Logging;
-using LoungeSaber_Server.Models.Match;
 
 namespace LoungeSaber_Server.Gameplay.Matchmaking;
 

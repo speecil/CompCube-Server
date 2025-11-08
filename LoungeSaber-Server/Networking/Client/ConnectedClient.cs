@@ -1,5 +1,8 @@
 ﻿using System.Net.Sockets;
 using System.Text;
+using CompCube_Models.Models.ClientData;
+using CompCube_Models.Models.Packets;
+using CompCube_Models.Models.Packets.UserPackets;
 using LoungeSaber_Server.Interfaces;
 using LoungeSaber_Server.Logging;
 

@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using BeatSaverSharp.Models;
-using LoungeSaber_Server.Models.Map;
-using LoungeSaber_Server.Models.Match;
+using CompCube_Models.Models.Map;
+using CompCube_Models.Models.Match;
 
 namespace LoungeSaber_Server.SQL;
 

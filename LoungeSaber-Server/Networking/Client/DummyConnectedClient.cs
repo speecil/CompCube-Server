@@ -1,12 +1,10 @@
-﻿using LoungeSaber_Server.Interfaces;
-using LoungeSaber_Server.Logging;
-using LoungeSaber_Server.Models.ClientData;
-using LoungeSaber_Server.Models.Packets;
-using LoungeSaber_Server.Models.Packets.ServerPackets;
-using LoungeSaber_Server.Models.Packets.UserPackets;
-using Newtonsoft.Json;
+﻿using CompCube_Models.Models.ClientData;
+using CompCube_Models.Models.Packets;
+using CompCube_Models.Models.Packets.ServerPackets;
+using CompCube_Models.Models.Packets.UserPackets;
+using LoungeSaber_Server.Interfaces;
 
-namespace LoungeSaber_Server.Models.Client;
+namespace LoungeSaber_Server.Networking.Client;
 
 public class DummyConnectedClient(UserInfo userInfo) : IConnectedClient
 {

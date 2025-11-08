@@ -1,4 +1,4 @@
-﻿using LoungeSaber_Server.Models.ClientData;
+﻿using CompCube_Models.Models.ClientData;
 using LoungeSaber_Server.SQL;
 using NetCord.Rest;
 using NetCord.Services.ApplicationCommands;

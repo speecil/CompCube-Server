@@ -1,6 +1,5 @@
 ﻿using System.Drawing;
-using LoungeSaber_Server.Models.Client;
-using LoungeSaber_Server.Models.ClientData;
+using CompCube_Models.Models.ClientData;
 using LoungeSaber_Server.SQL;
 using NetCord;
 using NetCord.Rest;
