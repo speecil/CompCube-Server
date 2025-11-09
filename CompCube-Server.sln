@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompCube_Server", "CompCube_Server\CompCube_Server.csproj", "{857E6319-70BB-42DF-A063-EE159BE52CDE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompCube-Server", "CompCube-Server\CompCube-Server.csproj", "{857E6319-70BB-42DF-A063-EE159BE52CDE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
