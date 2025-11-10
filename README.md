@@ -1,1 +1,1 @@
-The server repo for the LoungeSaber project
+The server repo for the CompCube project
