@@ -3,5 +3,5 @@ obj/
 /packages/
 riderModule.iml
 /_ReSharper.Caches/
-/CompCube-Server/appsettings.json
-/CompCube-Server/appsettings.development.json
+appsettings.json
+appsettings.development.json
