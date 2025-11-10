@@ -1,5 +1,6 @@
 ﻿using System.Data.SQLite;
 using CompCube_Models.Models.ClientData;
+using CompCube_Models.Models.Match;
 using CompCube_Server.Divisions;
 
 namespace CompCube_Server.SQL;
@@ -75,6 +76,48 @@ public class UserData : Database
         var highestWinstreak = reader.GetInt32(9);
             
         return new UserInfo(userName, userId, mmr, DivisionManager.GetDivisionFromMmr(mmr), badge, rank, discordId, banned, wins, losses, winstreak, highestWinstreak);
+    }
+
+    public void UpdateUserDataFromMatch(UserInfo userInfo, MatchResultsData results)
+    {
+        var won = results.Winner.User.UserId == userInfo.UserId;
+
+        var command = Connection.CreateCommand();
+        
+        if (won)
+        {
+            command.CommandText = "UPDATE userData SET wins = @newWins WHERE id = @id LIMIT 1";
+            command.Parameters.AddWithValue("newWins", userInfo.Wins + 1);
+            command.Parameters.AddWithValue("id", userInfo.UserId);
+            command.ExecuteNonQuery();
+
+            command = Connection.CreateCommand();
+            command.CommandText = "UPDATE userData SET winstreak = @newWinstreak WHERE id = @id LIMIT 1";
+            command.Parameters.AddWithValue("newWinstreak", userInfo.Winstreak + 1);
+            command.Parameters.AddWithValue("id", userInfo.UserId);
+            command.ExecuteNonQuery();
+
+            if (userInfo.Winstreak + 1 <= userInfo.HighestWinstreak) 
+                return;
+            
+            command = Connection.CreateCommand();
+            command.CommandText = "UPDATE userData SET highestWinstreak = @newHighestWinstreak WHERE id = @id LIMIT 1";
+            command.Parameters.AddWithValue("newHighestWinstreak", userInfo.HighestWinstreak + 1);
+            command.ExecuteNonQuery();
+
+            return;
+        }
+
+        command = Connection.CreateCommand();
+        command.CommandText = "UPDATE userData SET losses = @newLosses WHERE id = @id LIMIT 1";
+        command.Parameters.AddWithValue("newLosses", userInfo.Losses + 1);
+        command.Parameters.AddWithValue("id", userInfo.UserId);
+        command.ExecuteNonQuery();
+
+        command = Connection.CreateCommand();
+        command.CommandText = "UPDATE userData SET winstreak = 0 WHERE id = @id LIMIT 1";
+        command.Parameters.AddWithValue("id", userInfo.UserId);
+        command.ExecuteNonQuery();
     }
 
     public List<UserInfo> GetAllUsers()

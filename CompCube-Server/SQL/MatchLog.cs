@@ -67,6 +67,9 @@ public class MatchLog(UserData userData) : Database
         command.Parameters.AddWithValue("prematureEnd", results.Premature);
         command.Parameters.AddWithValue("map", results.Map?.Serialize());
         command.Parameters.AddWithValue("time", results.Time.ToString(CultureInfo.InvariantCulture));
+        
+        userData.UpdateUserDataFromMatch(results.Winner.User, results);
+        userData.UpdateUserDataFromMatch(results.Loser.User, results);
 
         command.ExecuteNonQuery();
     }
