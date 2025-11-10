@@ -1,4 +1,5 @@
 ﻿using CompCube_Models.Models.Match;
+using CompCube_Server.Gameplay.Match;
 using CompCube_Server.Interfaces;
 using CompCube_Server.Logging;
 using CompCube_Server.Models.Client;
@@ -47,10 +48,12 @@ public class StandardQueue : IQueue
             if (_clientPool.Count != 2) 
                 return;
             
-            var match = new Match.Match(_clientPool[0].Client, _clientPool[1].Client, _matchLog, _userData, _mapData, _logger);
+            var match = new Match.Match(_matchLog, _userData, _mapData, _logger);
+            await match.StartMatch(new MatchSettings(true), _clientPool[0].Client, _clientPool[1].Client);
+            ActiveMatches.Add(match);
+            
             _clientPool.Clear();
-            await match.StartMatch();
-
+            
             match.OnMatchEnded += OnMatchEnded;
         }
         catch (Exception e)

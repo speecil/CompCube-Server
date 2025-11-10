@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 namespace CompCube_Server.Gameplay.Events;
 
-public class EventManager
+public class EventsManager
 {
     private readonly Logger _logger;
     
@@ -17,7 +17,7 @@ public class EventManager
     
     private static string PathToEventsFile => Path.Combine(Directory.GetCurrentDirectory(), "events.json");
     
-    public EventManager(Logger logger)
+    public EventsManager(Logger logger)
     {
         _logger = logger;
         
@@ -66,6 +66,5 @@ public class EventManager
         
         _logger.Info("Could not read events from file.");
         return [];
-
     }
 }

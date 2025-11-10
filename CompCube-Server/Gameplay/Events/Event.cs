@@ -1,4 +1,5 @@
 ﻿using CompCube_Models.Models.Events;
+using CompCube_Models.Models.Map;
 using CompCube_Models.Models.Match;
 using CompCube_Models.Models.Packets;
 using CompCube_Models.Models.Packets.ServerPackets.Event;
@@ -17,12 +18,14 @@ public class Event(EventData eventData) : IQueue
     private readonly List<IConnectedClient> _connectedClients = [];
     
     public int ClientCount => _connectedClients.Count;
+
+    private EventController _eventController;
     
     public void AddClientToPool(IConnectedClient client)
     {
         _connectedClients.Add(client);
 
-        client.OnDisconnected -= OnDisconnected;
+        client.OnDisconnected += OnDisconnected;
     }
 
     private void OnDisconnected(IConnectedClient c)
@@ -34,12 +37,10 @@ public class Event(EventData eventData) : IQueue
     
     public void StartEvent()
     {
-        SendPacketToAllClients(new EventStartedPacket());
-    }
-
-    public void CreateTournamentBracket()
-    {
-        throw new NotImplementedException();
+        _eventController = new EventController(_connectedClients);
+        EventData.AvailableToJoin = false;
+        
+        _eventController.StartEvent();
     }
 
     private void SendPacketToAllClients(ServerPacket packet)

@@ -1,4 +1,5 @@
 ﻿using CompCube_Models.Models.Match;
+using CompCube_Server.Gameplay.Match;
 using CompCube_Server.Interfaces;
 using CompCube_Server.Logging;
 using CompCube_Server.Networking.Client;
@@ -32,8 +33,8 @@ public class DebugQueue : IQueue
         {
             await Task.Delay(100);
         
-            var match = new Match.Match(client, new DummyConnectedClient(_userData.GetUserById("0") ?? throw new Exception("Could not find debug user data!")), _matchLog, _userData, _mapData, _logger); 
-            await match.StartMatch();
+            var match = new Match.Match(_matchLog, _userData, _mapData, _logger); 
+            await match.StartMatch(new MatchSettings(true), client, new DummyConnectedClient(_userData.GetUserById("0") ?? throw new Exception("Could not find debug user data!")));
             match.OnMatchEnded += MatchOnMatchEnded;
         }
         catch (Exception e)

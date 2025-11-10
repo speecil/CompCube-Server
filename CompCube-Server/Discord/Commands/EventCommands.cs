@@ -7,24 +7,24 @@ using NetCord.Services.ApplicationCommands;
 namespace CompCube_Server.Discord.Commands;
 
 [SlashCommand("event", "event command")]
-public class EventCommands(EventManager eventManager) : ApplicationCommandModule<ApplicationCommandContext>
+public class EventCommands(EventsManager eventsManager) : ApplicationCommandModule<ApplicationCommandContext>
 {
     [SubSlashCommand("create", "creates an event")]
     public InteractionMessageProperties CreateEvent(string eventName, string displayName, string description)
     {
-        if (eventManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName) != null)
+        if (eventsManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName) != null)
         {
             return "Event already exists!";
         }
         
-        eventManager.AddEvent(new Event(new EventData(eventName, displayName, description)));
+        eventsManager.AddEvent(new Event(new EventData(eventName, displayName, description, true)));
         return "Event created!";
     }
 
     [SubSlashCommand("start", "start an event")]
     public InteractionMessageProperties StartEvent(string eventName)
     {
-        var e = eventManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName);
+        var e = eventsManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName);
 
         if (e == null)
             return $"Event {eventName} not found!";
@@ -42,10 +42,12 @@ public class EventCommands(EventManager eventManager) : ApplicationCommandModule
     [SubSlashCommand("stop", "stops an event")]
     public InteractionMessageProperties StopEvent(string eventName)
     {
-        var e = eventManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName);
+        var e = eventsManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName);
         
         if (e == null)
             return $"Event {eventName} not found!";
+        
+        
         
         return $"Event {eventName} stopped!";
     }
