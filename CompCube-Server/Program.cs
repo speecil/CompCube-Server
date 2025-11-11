@@ -65,12 +65,14 @@ public class Program
         services.AddSingleton<ConnectionManager>();
         
         services.AddSingleton<QueueManager>();
-        services.AddSingleton<EventManager>();
+        services.AddSingleton<EventsManager>();
         
         services.AddSingleton<IQueue, DebugQueue>();
         services.AddSingleton<IQueue, StandardQueue>();
         
-        services.AddSingleton<MatchCompletedMessageManager>();
+        services.AddSingleton<MatchMessageManager>();
+        services.AddSingleton<EventMessageManager>();
+        
         services.AddSingleton<MatchInfoMessageFormatter>();
         services.AddSingleton<UserCommands>();
         services.AddSingleton<ServerCommands>();

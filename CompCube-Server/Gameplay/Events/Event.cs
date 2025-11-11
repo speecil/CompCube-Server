@@ -1,28 +1,30 @@
 ﻿using CompCube_Models.Models.Events;
+using CompCube_Models.Models.Map;
 using CompCube_Models.Models.Match;
 using CompCube_Models.Models.Packets;
 using CompCube_Models.Models.Packets.ServerPackets.Event;
+using CompCube_Server.Discord.Events;
 using CompCube_Server.Interfaces;
 
 namespace CompCube_Server.Gameplay.Events;
 
-public class Event(EventData eventData) : IQueue
+public class Event(EventData eventData, EventMessageManager eventMessageManager) : IQueue
 {
     public string QueueName => eventData.EventName;
     
     public EventData EventData => eventData;
-    
-    public event Action<MatchResultsData, Match.Match>? QueueMatchEnded;
 
     private readonly List<IConnectedClient> _connectedClients = [];
     
     public int ClientCount => _connectedClients.Count;
+
+    private EventController? _eventController;
     
     public void AddClientToPool(IConnectedClient client)
     {
         _connectedClients.Add(client);
 
-        client.OnDisconnected -= OnDisconnected;
+        client.OnDisconnected += OnDisconnected;
     }
 
     private void OnDisconnected(IConnectedClient c)
@@ -34,16 +36,14 @@ public class Event(EventData eventData) : IQueue
     
     public void StartEvent()
     {
-        SendPacketToAllClients(new EventStartedPacket());
+        _eventController = new EventController(_connectedClients, eventMessageManager);
+        EventData.AvailableToJoin = false;
+        
+        _eventController.StartEvent();
     }
 
-    public void CreateTournamentBracket()
+    public void SetMap(VotingMap votingMap)
     {
-        throw new NotImplementedException();
-    }
-
-    private void SendPacketToAllClients(ServerPacket packet)
-    {
-        _connectedClients.ForEach(i => i.SendPacket(packet));
+        _eventController.SetActiveMap(votingMap);
     }
 }

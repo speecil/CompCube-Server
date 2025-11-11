@@ -1,30 +1,33 @@
 ﻿using CompCube_Models.Models.Events;
+using CompCube_Server.Discord.Events;
 using CompCube_Server.Gameplay.Events;
 using CompCube_Server.Logging;
+using CompCube_Server.SQL;
+using NetCord;
 using NetCord.Rest;
 using NetCord.Services.ApplicationCommands;
 
 namespace CompCube_Server.Discord.Commands;
 
 [SlashCommand("event", "event command")]
-public class EventCommands(EventManager eventManager) : ApplicationCommandModule<ApplicationCommandContext>
+public class EventCommands(EventsManager eventsManager, EventMessageManager eventMessageManager, MapData mapData) : ApplicationCommandModule<ApplicationCommandContext>
 {
     [SubSlashCommand("create", "creates an event")]
     public InteractionMessageProperties CreateEvent(string eventName, string displayName, string description)
     {
-        if (eventManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName) != null)
+        if (eventsManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName) != null)
         {
             return "Event already exists!";
         }
         
-        eventManager.AddEvent(new Event(new EventData(eventName, displayName, description)));
+        eventsManager.AddEvent(new Event(new EventData(eventName, displayName, description, true), eventMessageManager));
         return "Event created!";
     }
 
-    [SubSlashCommand("start", "start an event")]
+    [SubSlashCommand("startEvent", "start an event")]
     public InteractionMessageProperties StartEvent(string eventName)
     {
-        var e = eventManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName);
+        var e = eventsManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName);
 
         if (e == null)
             return $"Event {eventName} not found!";
@@ -42,11 +45,49 @@ public class EventCommands(EventManager eventManager) : ApplicationCommandModule
     [SubSlashCommand("stop", "stops an event")]
     public InteractionMessageProperties StopEvent(string eventName)
     {
-        var e = eventManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName);
+        var e = eventsManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName);
         
         if (e == null)
             return $"Event {eventName} not found!";
         
+        //TODO: implement
+        
         return $"Event {eventName} stopped!";
+    }
+
+    [SubSlashCommand("setMap", "sets the map of an event")]
+    public InteractionMessageProperties SetMap(string eventName, string mapId)
+    {
+        var e = eventsManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName);
+        
+        if (e == null)
+            return $"Event {eventName} not found!";
+        
+        //todo: map ids
+        var map = mapData.GetAllMaps().First();
+        
+        e.SetMap(map);
+
+        return $"Map set to {mapId}";
+    }
+
+    [SubSlashCommand("startMatch", "starts the map match")]
+    public InteractionMessageProperties StartMatch(string eventName)
+    {
+        var e = eventsManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName);
+
+        if  (e == null)
+            return "Event not found!";
+
+        try
+        {
+            e.StartEvent();
+        }
+        catch (Exception ex)
+        {
+            return $"Could not start event: {ex}";
+        }
+        
+        return $"Event {eventName} started!";
     }
 }

@@ -4,6 +4,7 @@ using CompCube_Models.Models.Match;
 using CompCube_Models.Models.Packets;
 using CompCube_Models.Models.Packets.ServerPackets;
 using CompCube_Models.Models.Packets.UserPackets;
+using CompCube_Server.Discord.Events;
 using CompCube_Server.Interfaces;
 using CompCube_Server.Logging;
 using CompCube_Server.SQL;
@@ -14,13 +15,17 @@ public class Match
 {
     private readonly MatchLog _matchLog;
     private readonly UserData _userData;
+    private readonly MapData _mapData;
     private readonly Logger _logger;
+    private readonly MatchMessageManager _matchMessageManager;
     
-    public readonly IConnectedClient PlayerOne;
-    public readonly IConnectedClient PlayerTwo;
+    private IConnectedClient _playerOne;
+    private IConnectedClient _playerTwo;
 
-    private readonly ScoreManager _scoreManager;
-    private readonly VoteManager _voteManager;
+    private ScoreManager _scoreManager;
+    private VoteManager _voteManager;
+    
+    private MatchSettings _matchSettings;
 
     private VotingMap? _selectedMap;
     
@@ -29,39 +34,43 @@ public class Match
 
     private const int MmrLossOnDisconnect = 50;
 
-    private readonly int _id;
+    private int _id;
     
     private const int KFactor = 75;
 
-    public Match(IConnectedClient playerOne, IConnectedClient playerTwo, MatchLog matchLog, UserData userData, MapData mapData, Logger logger)
+    public Match(MatchLog matchLog, UserData userData, MapData mapData, Logger logger, MatchMessageManager matchMessageManager)
     {
         _matchLog = matchLog;
         _userData = userData;
         _logger = logger;
-        
-        PlayerOne = playerOne;
-        PlayerTwo = playerTwo;
-
-        _scoreManager = new ScoreManager(playerOne, playerTwo);
-        _voteManager = new VoteManager(playerOne, playerTwo, mapData);
-        
-        _id = matchLog.GetValidMatchId();
+        _mapData = mapData;
+        _matchMessageManager = matchMessageManager;
     }
 
-    public async Task StartMatch()
+    public async Task StartMatch(MatchSettings settings, IConnectedClient playerOne, IConnectedClient playerTwo)
     {
-        _logger.Info($"Match started between {PlayerOne.UserInfo.Username} and {PlayerTwo.UserInfo.Username} ({_id})");
+        _matchSettings = settings;
         
-        PlayerOne.OnDisconnected += OnPlayerDisconnected;
-        PlayerTwo.OnDisconnected += OnPlayerDisconnected;
+        _playerOne = playerOne;
+        _playerTwo = playerTwo;
+        
+        _scoreManager = new ScoreManager(playerOne, playerTwo);
+        _voteManager = new VoteManager(playerOne, playerTwo, _mapData);
+        
+        _id = _matchLog.GetValidMatchId();
+        
+        _logger.Info($"Match started between {_playerOne.UserInfo.Username} and {_playerTwo.UserInfo.Username} ({_id})");
+        
+        _playerOne.OnDisconnected += OnPlayerDisconnected;
+        _playerTwo.OnDisconnected += OnPlayerDisconnected;
 
         _voteManager.OnClientVoted += OnUserVoted;
         _voteManager.OnMapDetermined += OnMapDetermined;
         
         _scoreManager.OnWinnerDetermined += OnWinnerDetermined;
         
-        await PlayerOne.SendPacket(new MatchCreatedPacket(_voteManager.VotingOptions, PlayerTwo.UserInfo));
-        await PlayerTwo.SendPacket(new MatchCreatedPacket(_voteManager.VotingOptions, PlayerOne.UserInfo));
+        await _playerOne.SendPacket(new MatchCreatedPacket(_voteManager.VotingOptions, _playerTwo.UserInfo));
+        await _playerTwo.SendPacket(new MatchCreatedPacket(_voteManager.VotingOptions, _playerOne.UserInfo));
     }
 
     private async void OnMapDetermined(VotingMap map)
@@ -70,13 +79,13 @@ public class Match
         {
             _selectedMap = map;
         
-            PlayerOne.OnScoreSubmission += OnScoreSubmitted;
-            PlayerTwo.OnScoreSubmission += OnScoreSubmitted;
+            _playerOne.OnScoreSubmission += OnScoreSubmitted;
+            _playerTwo.OnScoreSubmission += OnScoreSubmitted;
 
             await Task.Delay(3000);
 
-            await PlayerOne.SendPacket(new MatchStartedPacket(_selectedMap, 15, 10, PlayerTwo.UserInfo));
-            await PlayerTwo.SendPacket(new MatchStartedPacket(_selectedMap, 15, 10, PlayerOne.UserInfo));
+            await _playerOne.SendPacket(new MatchStartedPacket(_selectedMap, 15, 10, _playerTwo.UserInfo));
+            await _playerTwo.SendPacket(new MatchStartedPacket(_selectedMap, 15, 10, _playerOne.UserInfo));
         }
         catch (Exception e)
         {
@@ -88,8 +97,8 @@ public class Match
     {
         try
         {
-            var winnerClient = winner.User.UserId == PlayerOne.UserInfo.UserId ? PlayerOne : PlayerTwo;
-            var loserClient = loser.User.UserId == PlayerOne.UserInfo.UserId ? PlayerOne : PlayerTwo;
+            var winnerClient = winner.User.UserId == _playerOne.UserInfo.UserId ? _playerOne : _playerTwo;
+            var loserClient = loser.User.UserId == _playerOne.UserInfo.UserId ? _playerOne : _playerTwo;
 
             var matchResultsData = new MatchResultsData(winner, loser, GetMmrChange(winner.User, loser.User),
                 _selectedMap, false, _id, DateTime.Now);
@@ -130,18 +139,23 @@ public class Match
 
     private void EndMatch(MatchResultsData results)
     {
-        PlayerOne.OnDisconnected -= OnPlayerDisconnected;
-        PlayerTwo.OnDisconnected -= OnPlayerDisconnected;
+        _playerOne.OnDisconnected -= OnPlayerDisconnected;
+        _playerTwo.OnDisconnected -= OnPlayerDisconnected;
         
-        _logger.Info($"Match between {PlayerOne.UserInfo.Username} and {PlayerTwo.UserInfo.Username} concluded ({_id})");
+        _logger.Info($"Match between {_playerOne.UserInfo.Username} and {_playerTwo.UserInfo.Username} concluded ({_id})");
         
-        PlayerOne.Disconnect();
-        PlayerTwo.Disconnect();
+        _playerOne.Disconnect();
+        _playerTwo.Disconnect();
         
-        _matchLog.AddMatchToTable(results);
         OnMatchEnded?.Invoke(results, this);
 
         _userData.ApplyMmrChange(results.Winner.User, results.MmrChange);
+        
+        if (_matchSettings.LogMatch)
+        {
+            _matchLog.AddMatchToTable(results);
+            _matchMessageManager.PostMatchResults(results);
+        }
         
         if (results.Premature)
         {
@@ -181,14 +195,14 @@ public class Match
     {
         Task.Run(async () =>
         {
-            await PlayerOne.SendPacket(packet);
+            await _playerOne.SendPacket(packet);
         });
         
         Task.Run(async () =>
         {
-            await PlayerTwo.SendPacket(packet);
+            await _playerTwo.SendPacket(packet);
         });
     }
 
-    private IConnectedClient GetOppositeClient(IConnectedClient client) => client.UserInfo.UserId == PlayerOne.UserInfo.UserId ? PlayerTwo : PlayerOne;
+    private IConnectedClient GetOppositeClient(IConnectedClient client) => client.UserInfo.UserId == _playerOne.UserInfo.UserId ? _playerTwo : _playerOne;
 }
