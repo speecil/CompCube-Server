@@ -4,7 +4,7 @@ namespace CompCube_Server.Networking.ServerStatus;
 
 public class ServerStatusManager
 {
-    private ServerState.State _state = ServerState.State.Maintenance;
+    private ServerState.State _state = ServerState.State.Online;
 
     public ServerState.State State
     {

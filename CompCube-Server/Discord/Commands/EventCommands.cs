@@ -24,7 +24,7 @@ public class EventCommands(EventsManager eventsManager, EventMessageManager even
         return "Event created!";
     }
 
-    [SubSlashCommand("startEvent", "start an event")]
+    [SubSlashCommand("startevent", "start an event")]
     public InteractionMessageProperties StartEvent(string eventName)
     {
         var e = eventsManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName);
@@ -55,7 +55,7 @@ public class EventCommands(EventsManager eventsManager, EventMessageManager even
         return $"Event {eventName} stopped!";
     }
 
-    [SubSlashCommand("setMap", "sets the map of an event")]
+    [SubSlashCommand("setmap", "sets the map of an event")]
     public InteractionMessageProperties SetMap(string eventName, string mapId)
     {
         var e = eventsManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName);
@@ -71,7 +71,7 @@ public class EventCommands(EventsManager eventsManager, EventMessageManager even
         return $"Map set to {mapId}";
     }
 
-    [SubSlashCommand("startMatch", "starts the map match")]
+    [SubSlashCommand("startmatch", "starts the map match")]
     public InteractionMessageProperties StartMatch(string eventName)
     {
         var e = eventsManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName);

@@ -209,7 +209,7 @@ public class UserData : Database
         }
         
         var addToUserDataCommand = Connection.CreateCommand();
-        addToUserDataCommand.CommandText = "INSERT INTO userData VALUES (@userId, 1000, @userName, null, null, false)";
+        addToUserDataCommand.CommandText = "INSERT INTO userData VALUES (@userId, 1000, @userName, null, null, false, 0, 0, 0, 0)";
         addToUserDataCommand.Parameters.AddWithValue("userId", userId);
         addToUserDataCommand.Parameters.AddWithValue("userName", userName);
         addToUserDataCommand.ExecuteNonQuery();

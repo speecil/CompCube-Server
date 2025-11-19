@@ -49,6 +49,8 @@ public class Program
 
         host.UseGatewayHandlers();
 
+        host.Services.GetRequiredService<ConnectionManager>();
+        
         host.Run();
     }
         
@@ -85,9 +87,5 @@ public class Program
         services.AddSingleton<ServerStatusApiController>();
         services.AddSingleton<UserApiController>();
         services.AddSingleton<EventApiController>();
-
-        // force instantiation of connectionmanager as non lazy
-        // lazy fucks
-        services.BuildServiceProvider().GetRequiredService<ConnectionManager>();
     }
 }

@@ -1,11 +1,12 @@
 ﻿using CompCube_Models.Models.ClientData;
+using CompCube_Server.Logging;
 using CompCube_Server.SQL;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CompCube_Server.Api.Controllers;
 
 [ApiController]
-public class UserApiController(UserData userData) : ControllerBase
+public class UserApiController(UserData userData, Logger logger) : ControllerBase
 {
     [HttpGet("/api/user/id/{id}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -19,13 +19,13 @@ public class Match
     private readonly Logger _logger;
     private readonly MatchMessageManager _matchMessageManager;
     
-    private IConnectedClient _playerOne;
-    private IConnectedClient _playerTwo;
+    private IConnectedClient? _playerOne;
+    private IConnectedClient? _playerTwo;
 
-    private ScoreManager _scoreManager;
-    private VoteManager _voteManager;
+    private ScoreManager? _scoreManager;
+    private VoteManager? _voteManager;
     
-    private MatchSettings _matchSettings;
+    private MatchSettings? _matchSettings;
 
     private VotingMap? _selectedMap;
     
@@ -52,12 +52,13 @@ public class Match
 
     public async Task StartMatchAsync(MatchSettings settings, IConnectedClient playerOne, IConnectedClient playerTwo)
     {
+        _logger.Info("started match");
         _matchSettings = settings;
         
         _playerOne = playerOne;
         _playerTwo = playerTwo;
         
-        _scoreManager = new ScoreManager(playerOne, playerTwo);
+        _scoreManager = new ScoreManager(playerOne, playerTwo, _logger);
         _voteManager = new VoteManager(playerOne, playerTwo, _mapData);
         
         _id = _matchLog.GetValidMatchId();

@@ -89,6 +89,10 @@ public class VoteManager
         
         var allMaps = _mapData.GetAllMaps();
 
+        if (allMaps.Count == 3)
+            return allMaps.ToArray();
+        
+
         while (selections.Count < amount)
         {
             var randomMap = allMaps[_random.Next(0, allMaps.Count)];

@@ -28,6 +28,7 @@ public class DebugQueue : IQueue
 
     public void AddClientToPool(IConnectedClient client)
     {
+        _logger.Info("yep");
         var match = new Match.Match(_matchLog, _userData, _mapData, _logger, _matchMessageManager);
         match.StartMatch(new MatchSettings(false, false), client, new DummyConnectedClient(_userData.GetUserById("0") ?? throw new Exception("Could not find debug user data!")));
     }
