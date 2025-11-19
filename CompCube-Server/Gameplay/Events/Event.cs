@@ -44,6 +44,6 @@ public class Event(EventData eventData, EventMessageManager eventMessageManager)
 
     public void SetMap(VotingMap votingMap)
     {
-        _eventController.SetActiveMap(votingMap);
+        _eventController?.SetActiveMap(votingMap);
     }
 }

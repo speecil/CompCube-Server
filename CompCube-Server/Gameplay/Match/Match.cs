@@ -47,7 +47,10 @@ public class Match
         _matchMessageManager = matchMessageManager;
     }
 
-    public async Task StartMatch(MatchSettings settings, IConnectedClient playerOne, IConnectedClient playerTwo)
+    public void StartMatch(MatchSettings settings, IConnectedClient playerOne, IConnectedClient playerTwo) =>
+        StartMatchAsync(settings, playerOne, playerTwo);
+
+    public async Task StartMatchAsync(MatchSettings settings, IConnectedClient playerOne, IConnectedClient playerTwo)
     {
         _matchSettings = settings;
         
@@ -156,6 +159,9 @@ public class Match
             _matchLog.AddMatchToTable(results);
             _matchMessageManager.PostMatchResults(results);
         }
+
+        if (!_matchSettings.Competitive)
+            return;
         
         if (results.Premature)
         {
@@ -186,22 +192,12 @@ public class Match
 
     private int GetMmrChange(UserInfo winner, UserInfo loser)
     {
+        if (_matchSettings.Competitive)
+            return 0;
+        
         var p = (1.0 / (1.0 + Math.Pow(10, ((winner.Mmr - loser.Mmr) / 400.0))));
 
         return (int) (KFactor * p);
-    }
-
-    private void SendToBothClients(ServerPacket packet)
-    {
-        Task.Run(async () =>
-        {
-            await _playerOne.SendPacket(packet);
-        });
-        
-        Task.Run(async () =>
-        {
-            await _playerTwo.SendPacket(packet);
-        });
     }
 
     private IConnectedClient GetOppositeClient(IConnectedClient client) => client.UserInfo.UserId == _playerOne.UserInfo.UserId ? _playerTwo : _playerOne;

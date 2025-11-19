@@ -68,7 +68,7 @@ public class Program
         services.AddSingleton<EventsManager>();
         
         services.AddSingleton<IQueue, DebugQueue>();
-        services.AddSingleton<IQueue, StandardQueue>();
+        services.AddSingleton<IQueue, StandardCasualQueue>();
         
         services.AddSingleton<MatchMessageManager>();
         services.AddSingleton<EventMessageManager>();
