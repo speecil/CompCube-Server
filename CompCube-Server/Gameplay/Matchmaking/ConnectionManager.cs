@@ -51,6 +51,7 @@ public class ConnectionManager : IDisposable
             while (_isStarted)
             {
                 var client = await _listener.AcceptTcpClientAsync();
+                _logger.Info("accepted tcp client");
                 
                 try
                 {
