@@ -23,12 +23,15 @@ public class Program
     {
         if (args.Contains("--debug"))
             Debug = true;
+
+        var useDiscord = !args.Contains("--noDiscord");
             
         var builder = WebApplication.CreateBuilder(args);
         
-        InstallBindings(builder.Services);
+        InstallBindings(builder.Services, useDiscord);
         
-        builder.Services.AddDiscordGateway().AddApplicationCommands();
+        if (useDiscord)
+            builder.Services.AddDiscordGateway().AddApplicationCommands();
 
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
@@ -44,17 +47,19 @@ public class Program
 
         host.UseHttpsRedirection();
         host.MapControllers();
-            
-        host.AddModules(typeof(Program).Assembly);
 
-        host.UseGatewayHandlers();
-
+        if (useDiscord)
+        {
+            host.AddModules(typeof(Program).Assembly);
+            host.UseGatewayHandlers();
+        }
+        
         host.Services.GetRequiredService<ConnectionManager>();
         
         host.Run();
     }
         
-    private static void InstallBindings(IServiceCollection services)
+    private static void InstallBindings(IServiceCollection services, bool useDiscord = true)
     {
         services.AddSingleton<Logger>();
         
@@ -71,14 +76,6 @@ public class Program
         
         services.AddSingleton<IQueue, DebugQueue>();
         services.AddSingleton<IQueue, StandardCasualQueue>();
-        
-        services.AddSingleton<MatchMessageManager>();
-        services.AddSingleton<EventMessageManager>();
-        
-        services.AddSingleton<MatchInfoMessageFormatter>();
-        services.AddSingleton<UserCommands>();
-        services.AddSingleton<ServerCommands>();
-        services.AddSingleton<MatchCommands>();
 
         services.AddSingleton<BeatSaverApiWrapper>();
 
@@ -87,5 +84,16 @@ public class Program
         services.AddSingleton<ServerStatusApiController>();
         services.AddSingleton<UserApiController>();
         services.AddSingleton<EventApiController>();
+
+        if (!useDiscord)
+            return;
+        
+        services.AddSingleton<MatchInfoMessageFormatter>();
+        services.AddSingleton<UserCommands>();
+        services.AddSingleton<ServerCommands>();
+        services.AddSingleton<MatchCommands>();
+        
+        services.AddSingleton<MatchMessageManager>();
+        services.AddSingleton<EventMessageManager>();
     }
 }

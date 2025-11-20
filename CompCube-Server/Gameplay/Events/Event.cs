@@ -8,7 +8,7 @@ using CompCube_Server.Interfaces;
 
 namespace CompCube_Server.Gameplay.Events;
 
-public class Event(EventData eventData, EventMessageManager eventMessageManager) : IQueue
+public class Event(EventData eventData, EventMessageManager? eventMessageManager) : IQueue
 {
     public string QueueName => eventData.EventName;
     

@@ -11,7 +11,7 @@ namespace CompCube_Server.Gameplay.Events;
 
 public class EventController
 {
-    private readonly EventMessageManager _eventMessageManager;
+    private readonly EventMessageManager? _eventMessageManager;
     
     private readonly List<IConnectedClient> _connectedClients;
     
@@ -19,7 +19,7 @@ public class EventController
     
     private EventPointsController _eventPointsController;
     
-    public EventController(List<IConnectedClient> clients, EventMessageManager eventMessageManager)
+    public EventController(List<IConnectedClient> clients, EventMessageManager? eventMessageManager)
     {
         _eventMessageManager = eventMessageManager;
         
@@ -32,12 +32,12 @@ public class EventController
 
     private void OnPointsUpdated(Dictionary<UserInfo, int> points)
     {
-        _eventMessageManager.PostEventPoints(points);
+        _eventMessageManager?.PostEventPoints(points);
     }
 
     private void OnScoresUpdated(List<MatchScore> scores, List<UserInfo> usersWithoutScores)
     {
-        _eventMessageManager.PostEventScores(scores, usersWithoutScores);
+        _eventMessageManager?.PostEventScores(scores, usersWithoutScores);
     }
 
     public void StartEvent()

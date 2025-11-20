@@ -17,7 +17,7 @@ public class Match
     private readonly UserData _userData;
     private readonly MapData _mapData;
     private readonly Logger _logger;
-    private readonly MatchMessageManager _matchMessageManager;
+    private readonly MatchMessageManager? _matchMessageManager;
     
     private IConnectedClient? _playerOne;
     private IConnectedClient? _playerTwo;
@@ -38,7 +38,7 @@ public class Match
     
     private const int KFactor = 75;
 
-    public Match(MatchLog matchLog, UserData userData, MapData mapData, Logger logger, MatchMessageManager matchMessageManager)
+    public Match(MatchLog matchLog, UserData userData, MapData mapData, Logger logger, MatchMessageManager? matchMessageManager)
     {
         _matchLog = matchLog;
         _userData = userData;
@@ -158,7 +158,7 @@ public class Match
         if (_matchSettings.LogMatch)
         {
             _matchLog.AddMatchToTable(results);
-            _matchMessageManager.PostMatchResults(results);
+            _matchMessageManager?.PostMatchResults(results);
         }
 
         if (!_matchSettings.Competitive)

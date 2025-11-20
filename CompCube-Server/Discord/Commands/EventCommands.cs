@@ -10,7 +10,7 @@ using NetCord.Services.ApplicationCommands;
 namespace CompCube_Server.Discord.Commands;
 
 [SlashCommand("event", "event command")]
-public class EventCommands(EventsManager eventsManager, EventMessageManager eventMessageManager, MapData mapData) : ApplicationCommandModule<ApplicationCommandContext>
+public class EventCommands(EventsManager eventsManager, EventMessageManager? eventMessageManager, MapData mapData) : ApplicationCommandModule<ApplicationCommandContext>
 {
     [SubSlashCommand("create", "creates an event")]
     public InteractionMessageProperties CreateEvent(string eventName, string displayName, string description)

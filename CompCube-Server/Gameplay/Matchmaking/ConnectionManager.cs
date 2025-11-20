@@ -4,6 +4,7 @@ using System.Text;
 using CompCube_Models.Models.Packets;
 using CompCube_Models.Models.Packets.ServerPackets;
 using CompCube_Models.Models.Packets.UserPackets;
+using CompCube_Server.Interfaces;
 using CompCube_Server.Logging;
 using CompCube_Server.Networking.Client;
 using CompCube_Server.SQL;
@@ -21,6 +22,8 @@ public class ConnectionManager : IDisposable
     private readonly Thread _listenForClientsThread;
     
     private bool _isStarted = false;
+    
+    private readonly List<IConnectedClient> _connectedClients = [];
     
     public ConnectionManager(UserData userData, Logger logger, QueueManager queueManager)
     {
@@ -62,8 +65,15 @@ public class ConnectionManager : IDisposable
 
                     var packet = UserPacket.Deserialize(json) as JoinRequestPacket ?? throw new Exception("Could not deserialize packet!");
 
-                    var connectedClient = new ConnectedClient(client, _userData.UpdateUserDataOnLogin(packet.UserId, packet.UserName), _logger);
-
+                    if (_connectedClients.Any(i => i.UserInfo.UserId == packet.UserId))
+                    {
+                        await client.GetStream().WriteAsync(new JoinResponsePacket(false, "You are logged in from another location!").SerializeToBytes());
+                        client.Close();
+                        return;
+                    }
+                    
+                    var connectedClient = new ConnectedClient(client, _userData.UpdateUserDataOnLogin(packet.UserId, packet.UserName));
+                    
                     var targetMatchmaker = _queueManager.GetQueueFromName(packet.Queue);
                     
                     if (targetMatchmaker == null)
@@ -76,6 +86,9 @@ public class ConnectionManager : IDisposable
                     await connectedClient.SendPacket(new JoinResponsePacket(true, "success"));
                     
                     targetMatchmaker.AddClientToPool(connectedClient);
+                    
+                    _connectedClients.Add(connectedClient);
+                    connectedClient.OnDisconnected += OnDisconnected;
                   
                     _logger.Info($"User {connectedClient.UserInfo.Username} ({connectedClient.UserInfo.UserId}) joined queue {targetMatchmaker.QueueName}");
                 }
@@ -90,6 +103,14 @@ public class ConnectionManager : IDisposable
         {
             _logger.Error(e);
         }
+    }
+
+    private void OnDisconnected(IConnectedClient client)
+    {
+        client.OnDisconnected -= OnDisconnected;
+        
+        _connectedClients.Remove(client);
+        _logger.Info($"{client.UserInfo.Username} ({client.UserInfo.UserId}) disconnected");
     }
 
     private void Stop()

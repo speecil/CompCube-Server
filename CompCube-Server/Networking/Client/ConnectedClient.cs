@@ -10,8 +10,6 @@ namespace CompCube_Server.Networking.Client;
 
 public class ConnectedClient : IConnectedClient, IDisposable
 {
-    private readonly Logger _logger;
-    
     private readonly TcpClient _client;
 
     private bool _listenToClient = true;
@@ -22,11 +20,10 @@ public class ConnectedClient : IConnectedClient, IDisposable
 
     public UserInfo UserInfo { get; }
 
-    public ConnectedClient(TcpClient client, UserInfo userInfo, Logger logger)
+    public ConnectedClient(TcpClient client, UserInfo userInfo)
     {
         _client = client;
         UserInfo = userInfo;
-        _logger = logger;
         
         var listenerThread = new Thread(ListenToClient);
         listenerThread.Start();
@@ -41,7 +38,6 @@ public class ConnectedClient : IConnectedClient, IDisposable
                 if (!IsConnectionAlive)
                 {
                     Disconnect();
-                    _logger.Info($"{UserInfo.Username} ({UserInfo.UserId}) disconnected");
                     return;
                 }
                 
@@ -65,7 +61,6 @@ public class ConnectedClient : IConnectedClient, IDisposable
         }
         catch (Exception e)
         {
-            _logger.Error(e);
             Disconnect();
         }
     }
