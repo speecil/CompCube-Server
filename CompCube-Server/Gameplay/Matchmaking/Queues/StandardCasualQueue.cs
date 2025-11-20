@@ -8,13 +8,7 @@ using CompCube_Server.SQL;
 
 namespace CompCube_Server.Gameplay.Matchmaking;
 
-public class StandardCasualQueue(
-    UserData userData,
-    MapData mapData,
-    MatchLog matchLog,
-    Logger logger,
-    MatchMessageManager matchMessageManager)
-    : StandardQueue
+public class StandardCasualQueue(GameMatchFactory gameMatchFactory) : StandardQueue
 {
     private readonly List<MatchmakingClient> _clientPool = [];
 
@@ -30,7 +24,7 @@ public class StandardCasualQueue(
         var playerOne = _clientPool[0];
         var playerTwo = _clientPool[1];
 
-        var match = new Match.Match(matchLog, userData, mapData, logger, matchMessageManager);
-        match.StartMatch(new MatchSettings(true, false), playerOne.Client, playerTwo.Client);
+        var match = gameMatchFactory.CreateNewMatch(playerOne.Client, playerTwo.Client, new MatchSettings(true, false));
+        match.StartMatch();
     }
 }

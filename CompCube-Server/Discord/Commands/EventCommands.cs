@@ -10,7 +10,7 @@ using NetCord.Services.ApplicationCommands;
 namespace CompCube_Server.Discord.Commands;
 
 [SlashCommand("event", "event command")]
-public class EventCommands(EventsManager eventsManager, EventMessageManager? eventMessageManager, MapData mapData) : ApplicationCommandModule<ApplicationCommandContext>
+public class EventCommands(EventsManager eventsManager, EventFactory eventFactory, MapData mapData) : ApplicationCommandModule<ApplicationCommandContext>
 {
     [SubSlashCommand("create", "creates an event")]
     public InteractionMessageProperties CreateEvent(string eventName, string displayName, string description)
@@ -20,7 +20,7 @@ public class EventCommands(EventsManager eventsManager, EventMessageManager? eve
             return "Event already exists!";
         }
         
-        eventsManager.AddEvent(new Event(new EventData(eventName, displayName, description, true), eventMessageManager));
+        eventsManager.AddEvent(eventFactory.Create(new EventData(eventName, displayName, description, false)));
         return "Event created!";
     }
 

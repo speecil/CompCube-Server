@@ -11,25 +11,25 @@ using CompCube_Server.SQL;
 
 namespace CompCube_Server.Gameplay.Match;
 
-public class Match
+public class GameMatch
 {
     private readonly MatchLog _matchLog;
     private readonly UserData _userData;
     private readonly MapData _mapData;
     private readonly Logger _logger;
-    private readonly MatchMessageManager? _matchMessageManager;
+    private readonly MatchMessageManager _matchMessageManager;
     
-    private IConnectedClient? _playerOne;
-    private IConnectedClient? _playerTwo;
+    private IConnectedClient _playerOne;
+    private IConnectedClient _playerTwo;
 
-    private ScoreManager? _scoreManager;
-    private VoteManager? _voteManager;
+    private ScoreManager _scoreManager;
+    private VoteManager _voteManager;
     
-    private MatchSettings? _matchSettings;
+    private MatchSettings _matchSettings;
 
     private VotingMap? _selectedMap;
     
-    public event Action<MatchResultsData, Match>? OnMatchEnded;
+    public event Action<MatchResultsData, GameMatch>? OnMatchEnded;
     public event Action<IConnectedClient, int, string>? OnPlayerPunished;
 
     private const int MmrLossOnDisconnect = 50;
@@ -38,7 +38,7 @@ public class Match
     
     private const int KFactor = 75;
 
-    public Match(MatchLog matchLog, UserData userData, MapData mapData, Logger logger, MatchMessageManager? matchMessageManager)
+    public GameMatch(MatchLog matchLog, UserData userData, MapData mapData, Logger logger, MatchMessageManager matchMessageManager)
     {
         _matchLog = matchLog;
         _userData = userData;
@@ -47,12 +47,8 @@ public class Match
         _matchMessageManager = matchMessageManager;
     }
 
-    public void StartMatch(MatchSettings settings, IConnectedClient playerOne, IConnectedClient playerTwo) =>
-        StartMatchAsync(settings, playerOne, playerTwo);
-
-    public async Task StartMatchAsync(MatchSettings settings, IConnectedClient playerOne, IConnectedClient playerTwo)
+    public void Init(IConnectedClient playerOne, IConnectedClient playerTwo, MatchSettings settings)
     {
-        _logger.Info("started match");
         _matchSettings = settings;
         
         _playerOne = playerOne;
@@ -62,7 +58,13 @@ public class Match
         _voteManager = new VoteManager(playerOne, playerTwo, _mapData);
         
         _id = _matchLog.GetValidMatchId();
-        
+    }
+
+    public void StartMatch() =>
+        StartMatchAsync();
+
+    public async Task StartMatchAsync()
+    {
         _logger.Info($"Match started between {_playerOne.UserInfo.Username} and {_playerTwo.UserInfo.Username} ({_id})");
         
         _playerOne.OnDisconnected += OnPlayerDisconnected;
@@ -158,7 +160,7 @@ public class Match
         if (_matchSettings.LogMatch)
         {
             _matchLog.AddMatchToTable(results);
-            _matchMessageManager?.PostMatchResults(results);
+            _matchMessageManager.PostMatchResults(results);
         }
 
         if (!_matchSettings.Competitive)

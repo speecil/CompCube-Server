@@ -8,17 +8,24 @@ using CompCube_Server.Interfaces;
 
 namespace CompCube_Server.Gameplay.Events;
 
-public class Event(EventData eventData, EventMessageManager? eventMessageManager) : IQueue
+public class Event(EventMessageManager eventMessageManager) : IQueue
 {
-    public string QueueName => eventData.EventName;
+    private EventData? _eventData;
     
-    public EventData EventData => eventData;
+    public string QueueName => _eventData?.EventName ?? throw new Exception("Event data accessed too early!");
+    
+    public EventData EventData => _eventData ?? throw new Exception("Event data accessed too early!");
 
     private readonly List<IConnectedClient> _connectedClients = [];
     
     public int ClientCount => _connectedClients.Count;
 
     private EventController? _eventController;
+
+    public void Init(EventData eventData)
+    {
+        _eventData = eventData;
+    }
     
     public void AddClientToPool(IConnectedClient client)
     {

@@ -9,11 +9,8 @@ namespace CompCube_Server.Gameplay.Matchmaking;
 
 public class StandardCompetitiveQueue : StandardQueue
 {
-    private readonly MatchLog _matchLog;
-    private readonly UserData _userData;
-    private readonly MapData _mapData;
+    private readonly GameMatchFactory _gameMatchFactory;
     private readonly Logger _logger;
-    private readonly MatchMessageManager _matchMessageManager;
     
     public override string QueueName => "standard_competitive_1v1";
     
@@ -21,13 +18,10 @@ public class StandardCompetitiveQueue : StandardQueue
 
     private readonly Thread _matchmakingCheckerThread;
 
-    public StandardCompetitiveQueue(Logger logger, MapData mapData, MatchMessageManager matchMessageManager, UserData userData, MatchLog matchLog)
+    public StandardCompetitiveQueue(Logger logger, GameMatchFactory gameMatchFactory)
     {
         _logger = logger;
-        _mapData = mapData;
-        _matchMessageManager = matchMessageManager;
-        _userData = userData;
-        _matchLog = matchLog;
+        _gameMatchFactory = gameMatchFactory;
 
         _matchmakingCheckerThread = new Thread(CreateMatchesWhereAvailable);
         _matchmakingCheckerThread.Start();
@@ -40,7 +34,8 @@ public class StandardCompetitiveQueue : StandardQueue
 
     private void CreateMatchesWhereAvailable()
     {
-        var clientsToCheck = _clientPool;
+        // create shallow copy
+        var clientsToCheck = _clientPool.ToArray();
         
         foreach (var client in clientsToCheck)
             foreach (var comparisonClient in clientsToCheck)
@@ -49,8 +44,8 @@ public class StandardCompetitiveQueue : StandardQueue
                     _clientPool.Remove(comparisonClient);
                     _clientPool.Remove(client);
 
-                    var match = new Match.Match(_matchLog, _userData, _mapData, _logger, _matchMessageManager);
-                    match.StartMatch(new MatchSettings(true, true), client.Client, comparisonClient.Client);
+                    var match = _gameMatchFactory.CreateNewMatch(client.Client, comparisonClient.Client, new MatchSettings(true, true));
+                    match.StartMatch();
                 }
     }
 }

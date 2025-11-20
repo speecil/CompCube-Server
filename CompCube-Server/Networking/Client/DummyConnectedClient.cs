@@ -27,7 +27,7 @@ public class DummyConnectedClient(UserInfo userInfo) : IConnectedClient
             case ServerPacket.ServerPacketTypes.MatchStarted:
                 var matchStartedPacket = packet as MatchStartedPacket ?? throw new Exception("no way this is a valid thing that can happen lmfao");
 
-                while (DateTime.UtcNow.AddSeconds(matchStartedPacket.StartingWait) > DateTime.UtcNow);
+                await Task.Delay(20000);
                 
                 OnScoreSubmission?.Invoke(new ScoreSubmissionPacket(90000, 100000, true, 0, true), this);
                 break;

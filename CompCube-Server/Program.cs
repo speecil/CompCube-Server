@@ -4,6 +4,7 @@ using CompCube_Server.Discord;
 using CompCube_Server.Discord.Commands;
 using CompCube_Server.Discord.Events;
 using CompCube_Server.Gameplay.Events;
+using CompCube_Server.Gameplay.Match;
 using CompCube_Server.Gameplay.Matchmaking;
 using CompCube_Server.Interfaces;
 using CompCube_Server.Logging;
@@ -23,15 +24,12 @@ public class Program
     {
         if (args.Contains("--debug"))
             Debug = true;
-
-        var useDiscord = !args.Contains("--noDiscord");
             
         var builder = WebApplication.CreateBuilder(args);
         
-        InstallBindings(builder.Services, useDiscord);
+        InstallBindings(builder.Services);
         
-        if (useDiscord)
-            builder.Services.AddDiscordGateway().AddApplicationCommands();
+        builder.Services.AddDiscordGateway().AddApplicationCommands();
 
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
@@ -48,18 +46,15 @@ public class Program
         host.UseHttpsRedirection();
         host.MapControllers();
 
-        if (useDiscord)
-        {
-            host.AddModules(typeof(Program).Assembly);
-            host.UseGatewayHandlers();
-        }
+        host.AddModules(typeof(Program).Assembly);
+        host.UseGatewayHandlers();
         
         host.Services.GetRequiredService<ConnectionManager>();
         
         host.Run();
     }
         
-    private static void InstallBindings(IServiceCollection services, bool useDiscord = true)
+    private static void InstallBindings(IServiceCollection services)
     {
         services.AddSingleton<Logger>();
         
@@ -70,6 +65,9 @@ public class Program
         services.AddSingleton<ServerStatusManager>();
         
         services.AddSingleton<ConnectionManager>();
+
+        services.AddSingleton<GameMatchFactory>();
+        services.AddSingleton<EventFactory>();
         
         services.AddSingleton<QueueManager>();
         services.AddSingleton<EventsManager>();
@@ -84,9 +82,6 @@ public class Program
         services.AddSingleton<ServerStatusApiController>();
         services.AddSingleton<UserApiController>();
         services.AddSingleton<EventApiController>();
-
-        if (!useDiscord)
-            return;
         
         services.AddSingleton<MatchInfoMessageFormatter>();
         services.AddSingleton<UserCommands>();
