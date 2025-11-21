@@ -7,6 +7,8 @@ public class EventFactory(IServiceProvider services)
     public Event Create(EventData eventData)
     {
         var e = ActivatorUtilities.CreateInstance<Event>(services);
+        
+        e.Init(eventData);
 
         return e;
     }
