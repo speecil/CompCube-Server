@@ -2,47 +2,43 @@
 using CompCube_Models.Models.Packets.UserPackets;
 using CompCube_Server.Interfaces;
 using CompCube_Server.Logging;
+using CompCube.Gameplay.Match;
 
 namespace CompCube_Server.Gameplay.Match;
 
 public class ScoreManager
 {
-    public event Action<MatchScore, MatchScore>? OnWinnerDetermined;
-
-    private readonly List<MatchScore> _matchScores = [];
+    public event Action<TeamScores, TeamScores>? OnWinnerDetermined;
 
     private readonly Logger _logger;
-    
-    public ScoreManager(IConnectedClient playerOne, IConnectedClient playerTwo, Logger logger)
-    {
-        playerOne.OnScoreSubmission += OnScoreSubmitted;
-        playerTwo.OnScoreSubmission += OnScoreSubmitted;
 
+    private readonly Team _redTeam;
+    private readonly Team _blueTeam;
+
+    private TeamScores? _firstTeamScore = null;
+    
+    public ScoreManager(Team redTeam, Team blueTeam, Logger logger)
+    {
+        _redTeam = redTeam;
+        _blueTeam = blueTeam;
+        
         _logger = logger;
+        
+        redTeam.HandleMatchStarting(OnTeamScoreSubmitted);
     }
 
-    private void OnScoreSubmitted(ScoreSubmissionPacket scorePacket, IConnectedClient client)
+    private void OnTeamScoreSubmitted(TeamScores scores)
     {
-        _logger.Info("score submitted");
-        
-        client.OnScoreSubmission -= OnScoreSubmitted;
-
-        var matchScore = new MatchScore(client.UserInfo, scorePacket.GetScore());
-        
-        _matchScores.Add(matchScore);
-
-        if (_matchScores.Count != 2) 
-            return;
-
-        var winnerScore = matchScore;
-        
-        if (_matchScores[0].Score?.Points > scorePacket.Score || (_matchScores[0].Score?.Points == scorePacket.Score && _matchScores[0].User.Mmr >= client.UserInfo.Mmr))
+        if (_firstTeamScore == null)
         {
-            winnerScore = _matchScores[0];
+            _firstTeamScore = scores;
+            return;
         }
 
-        var loserScore = winnerScore.User.UserId == client.UserInfo.UserId ? _matchScores[0] : _matchScores[1];
+        var winner = scores.TotalScore > _firstTeamScore.TotalScore ? scores : _firstTeamScore;
+
+        var loser = winner == scores ? _firstTeamScore : scores;
         
-        OnWinnerDetermined?.Invoke(winnerScore, loserScore);
+        OnWinnerDetermined?.Invoke(winner, loser);
     }
 }

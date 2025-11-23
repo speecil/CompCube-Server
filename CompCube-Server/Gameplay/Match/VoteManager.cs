@@ -1,4 +1,5 @@
-﻿using CompCube_Models.Models.Map;
+﻿using CompCube_Models.Models.ClientData;
+using CompCube_Models.Models.Map;
 using CompCube_Models.Models.Packets.UserPackets;
 using CompCube_Server.Interfaces;
 using CompCube_Server.SQL;
@@ -8,22 +9,19 @@ namespace CompCube_Server.Gameplay.Match;
 public class VoteManager
 {
     private readonly Random _random = new();
-    
     private readonly MapData _mapData;
     
     public readonly VotingMap[] VotingOptions;
 
-    private VotingMap? _firstVote = null;
-
+    private Dictionary<UserInfo, VotingMap?> _votes;
     public event Action<VotingMap>? OnMapDetermined;
     
-    public event Action<IConnectedClient, int>? OnClientVoted;
 
     private readonly Timer _timer;
 
     private bool MapAlreadyDetermined { get; set; } = false;
 
-    public VoteManager(IConnectedClient playerOne, IConnectedClient playerTwo, MapData mapData)
+    public VoteManager(Team red, Team blue, MapData mapData)
     {
         _mapData = mapData;
 
@@ -31,8 +29,37 @@ public class VoteManager
         
         _timer = new Timer(OnTimerElapsed, null, new TimeSpan(0, 0, 30), Timeout.InfiniteTimeSpan);
         
-        playerOne.OnUserVoted += OnUserVoted;
-        playerTwo.OnUserVoted += OnUserVoted;
+        red.DoForEach(i =>
+        {
+            i.OnUserVoted += HandleUserVote;
+            i.OnDisconnected += HandleClientDisconnected;
+        });
+        blue.DoForEach(i =>
+        {
+            i.OnUserVoted += HandleUserVote;
+            i.OnDisconnected += HandleClientDisconnected;
+        });
+
+        _votes = red.Players.Concat(blue.Players).Select(i => new KeyValuePair<UserInfo, VotingMap?>(i.UserInfo, null)).ToDictionary();
+    }
+
+    private void HandleClientDisconnected(IConnectedClient client)
+    {
+        client.OnDisconnected -= HandleClientDisconnected;
+        client.OnUserVoted -= HandleUserVote;
+
+        _votes.Remove(client.UserInfo);
+        
+        DetermineVoteIfAllowed();
+    }
+
+    private void HandleUserVote(VotePacket vote, IConnectedClient client)
+    {
+        client.OnUserVoted -= HandleUserVote;
+
+        _votes[client.UserInfo] = VotingOptions[vote.VoteIndex];
+        
+        DetermineVoteIfAllowed();
     }
 
     private void OnTimerElapsed(object? _)
@@ -40,41 +67,28 @@ public class VoteManager
         if (MapAlreadyDetermined) 
             return;
 
-        if (_firstVote == null)
+        if (_votes.All(i => i.Value == null))
         {
-            DetermineVote(VotingOptions[0]);
+            ChooseVote(VotingOptions[0]);
             return;
         }
+
+        var validVotes = _votes.Values.Where(i => i != null).ToArray();
         
-        DetermineVote(_firstVote);
+        ChooseVote(validVotes.ElementAt(_random.Next(0, validVotes.Length)) ?? VotingOptions[0]);
     }
 
-    private void OnUserVoted(VotePacket packet, IConnectedClient client)
+    private void DetermineVoteIfAllowed()
     {
-        client.OnUserVoted -= OnUserVoted;
-
-        OnClientVoted?.Invoke(client, packet.VoteIndex);
-        
-        if (_firstVote == null)
-        {
-            _firstVote = VotingOptions[packet.VoteIndex];
+        if (_votes.Any(i => i.Value == null))
             return;
-        }
-        
-        var secondVote = VotingOptions[packet.VoteIndex];
 
-        var selectedMap = _random.Next(0, 2);
+        var selectedVote = _random.Next(0, _votes.Count);
         
-        if (selectedMap == 0)
-        {
-            DetermineVote(_firstVote);
-            return;
-        }
-        
-        DetermineVote(secondVote);
+        ChooseVote(_votes.Values.ToList()[selectedVote] ?? VotingOptions[0]);
     }
 
-    private void DetermineVote(VotingMap map)
+    private void ChooseVote(VotingMap map)
     {
         if (MapAlreadyDetermined)
             return;

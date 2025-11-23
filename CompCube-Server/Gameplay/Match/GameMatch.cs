@@ -8,6 +8,7 @@ using CompCube_Server.Discord.Events;
 using CompCube_Server.Interfaces;
 using CompCube_Server.Logging;
 using CompCube_Server.SQL;
+using CompCube.Gameplay.Match;
 
 namespace CompCube_Server.Gameplay.Match;
 
@@ -18,9 +19,9 @@ public class GameMatch
     private readonly MapData _mapData;
     private readonly Logger _logger;
     private readonly MatchMessageManager _matchMessageManager;
-    
-    private IConnectedClient _playerOne;
-    private IConnectedClient _playerTwo;
+
+    private Team _redTeam;
+    private Team _blueTeam;
 
     private ScoreManager _scoreManager;
     private VoteManager _voteManager;
@@ -28,9 +29,6 @@ public class GameMatch
     private MatchSettings _matchSettings;
 
     private VotingMap? _selectedMap;
-    
-    public event Action<MatchResultsData, GameMatch>? OnMatchEnded;
-    public event Action<IConnectedClient, int, string>? OnPlayerPunished;
 
     private const int MmrLossOnDisconnect = 50;
 
@@ -47,17 +45,16 @@ public class GameMatch
         _matchMessageManager = matchMessageManager;
     }
 
-    public void Init(IConnectedClient playerOne, IConnectedClient playerTwo, MatchSettings settings)
+    public void Init(IConnectedClient[] redTeamPlayers, IConnectedClient[] blueTeamPlayers, MatchSettings settings)
     {
         _matchSettings = settings;
         
-        _playerOne = playerOne;
-        _playerTwo = playerTwo;
-        
-        _scoreManager = new ScoreManager(playerOne, playerTwo, _logger);
-        _voteManager = new VoteManager(playerOne, playerTwo, _mapData);
+        _redTeam = new Team(redTeamPlayers, Team.TeamName.Red);
+        _blueTeam = new Team(blueTeamPlayers, Team.TeamName.Blue);
         
         _id = _matchLog.GetValidMatchId();
+        
+        _redTeam.OnTeamMemberDisconnected += OnTeamMemberDisconnected;
     }
 
     public void StartMatch() =>
@@ -65,132 +62,20 @@ public class GameMatch
 
     public async Task StartMatchAsync()
     {
-        _logger.Info($"Match started between {_playerOne.UserInfo.Username} and {_playerTwo.UserInfo.Username} ({_id})");
         
-        _playerOne.OnDisconnected += OnPlayerDisconnected;
-        _playerTwo.OnDisconnected += OnPlayerDisconnected;
-
-        _voteManager.OnClientVoted += OnUserVoted;
-        _voteManager.OnMapDetermined += OnMapDetermined;
-        
-        _scoreManager.OnWinnerDetermined += OnWinnerDetermined;
-        
-        await _playerOne.SendPacket(new MatchCreatedPacket(_voteManager.VotingOptions, _playerTwo.UserInfo));
-        await _playerTwo.SendPacket(new MatchCreatedPacket(_voteManager.VotingOptions, _playerOne.UserInfo));
     }
 
-    private async void OnMapDetermined(VotingMap map)
+    private void OnTeamMemberDisconnected(int remainingCount)
     {
-        try
-        {
-            _selectedMap = map;
         
-            _playerOne.OnScoreSubmission += OnScoreSubmitted;
-            _playerTwo.OnScoreSubmission += OnScoreSubmitted;
-
-            await Task.Delay(3000);
-
-            await _playerOne.SendPacket(new MatchStartedPacket(_selectedMap, 15, 10, _playerTwo.UserInfo));
-            await _playerTwo.SendPacket(new MatchStartedPacket(_selectedMap, 15, 10, _playerOne.UserInfo));
-        }
-        catch (Exception e)
-        {
-            _logger.Error(e);
-        }
     }
 
-    private async void OnWinnerDetermined(MatchScore winner, MatchScore loser)
+    private async Task SendAllClientsPacketAsync(ServerPacket packet)
     {
-        try
-        {
-            var winnerClient = winner.User.UserId == _playerOne.UserInfo.UserId ? _playerOne : _playerTwo;
-            var loserClient = loser.User.UserId == _playerOne.UserInfo.UserId ? _playerOne : _playerTwo;
+        var allPlayers = _redTeam.Players.Concat(_blueTeam.Players);
 
-            var matchResultsData = new MatchResultsData(winner, loser, GetMmrChange(winner.User, loser.User),
-                _selectedMap, false, _id, DateTime.Now);
-
-            var matchResultsPacket = new MatchResultsPacket(matchResultsData);
-            
-            await winnerClient.SendPacket(matchResultsPacket);
-            await loserClient.SendPacket(matchResultsPacket);
-            
-            EndMatch(matchResultsData);
-        }
-        catch (Exception e)
-        {
-            _logger.Error(e);
-        }
-    }
-
-    private async void OnPlayerDisconnected(IConnectedClient client)
-    {
-        try
-        {
-            var winner = GetOppositeClient(client).UserInfo;
-            var loser = GetOppositeClient(client).UserInfo;
-            
-            var mmrChange = GetMmrChange(winner, loser);
-            
-            OnPlayerPunished?.Invoke(client, 50, "Leaving Match Early");
-            
-            await GetOppositeClient(client).SendPacket(new PrematureMatchEndPacket("OpponentDisconnected"));
-            
-            EndMatch(new MatchResultsData(new MatchScore(winner, Score.Empty), new MatchScore(loser, Score.Empty), mmrChange, null, true, _id, DateTime.UtcNow));
-        }
-        catch (Exception e)
-        {
-            _logger.Error(e);
-        }
-    }
-
-    private void EndMatch(MatchResultsData results)
-    {
-        _playerOne.OnDisconnected -= OnPlayerDisconnected;
-        _playerTwo.OnDisconnected -= OnPlayerDisconnected;
-        
-        _logger.Info($"Match between {_playerOne.UserInfo.Username} and {_playerTwo.UserInfo.Username} concluded ({_id})");
-        
-        _playerOne.Disconnect();
-        _playerTwo.Disconnect();
-        
-        OnMatchEnded?.Invoke(results, this);
-
-        _userData.ApplyMmrChange(results.Winner.User, results.MmrChange);
-        
-        if (_matchSettings.LogMatch)
-        {
-            _matchLog.AddMatchToTable(results);
-            _matchMessageManager.PostMatchResults(results);
-        }
-
-        if (!_matchSettings.Competitive)
-            return;
-        
-        if (results.Premature)
-        {
-            _userData.ApplyMmrChange(results.Loser.User, -results.MmrChange - MmrLossOnDisconnect);
-            return;
-        }
-        
-        _userData.ApplyMmrChange(results.Loser.User, -results.MmrChange);
-    }
-
-    private async void OnUserVoted(IConnectedClient client, int voteIdx)
-    {
-        try
-        {
-            await GetOppositeClient(client).SendPacket(new OpponentVotedPacket(voteIdx));
-        }
-        catch (Exception e)
-        {
-            _logger.Error(e);
-        }
-    }
-
-    private void OnScoreSubmitted(ScoreSubmissionPacket score, IConnectedClient client)
-    {
-        client.OnScoreSubmission -= OnScoreSubmitted;
-        client.OnDisconnected -= OnPlayerDisconnected;
+        foreach (var player in allPlayers)
+            await player.SendPacket(packet);
     }
 
     private int GetMmrChange(UserInfo winner, UserInfo loser)
@@ -202,6 +87,4 @@ public class GameMatch
 
         return (int) (KFactor * p);
     }
-
-    private IConnectedClient GetOppositeClient(IConnectedClient client) => client.UserInfo.UserId == _playerOne.UserInfo.UserId ? _playerTwo : _playerOne;
 }
