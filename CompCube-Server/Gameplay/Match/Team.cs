@@ -10,6 +10,10 @@ namespace CompCube_Server.Gameplay.Match;
 public class Team(IConnectedClient[] players, Team.TeamName teamName)
 {
     public readonly TeamName Name = teamName;
+
+    public TeamData TeamData => new(teamName, Players.Select(i => i.UserInfo).ToArray());
+
+    public readonly int AverageMmr = players.Sum(i => i.UserInfo.Mmr) / 3;
     
     public List<IConnectedClient> Players { get; private set; } = players.ToList();
 
@@ -17,7 +21,7 @@ public class Team(IConnectedClient[] players, Team.TeamName teamName)
 
     private Dictionary<UserInfo, Score?> _scores = new();
 
-    public event Action<int>? OnTeamMemberDisconnected;
+    public event Action<TeamData, UserInfo, int>? OnTeamMemberDisconnected;
     
     public void DoForEach(Action<IConnectedClient>? action)
     {
@@ -53,7 +57,7 @@ public class Team(IConnectedClient[] players, Team.TeamName teamName)
         
         _scores.Remove(client.UserInfo);
 
-        OnTeamMemberDisconnected?.Invoke(Players.Count);
+        OnTeamMemberDisconnected?.Invoke(TeamData, client.UserInfo, Players.Count);
         
         CheckIfTeamIsWaitingOnScore();
     }

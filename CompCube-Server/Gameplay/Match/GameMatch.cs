@@ -9,6 +9,7 @@ using CompCube_Server.Interfaces;
 using CompCube_Server.Logging;
 using CompCube_Server.SQL;
 using CompCube.Gameplay.Match;
+using VotePacket = CompCube_Models.Models.Packets.ServerPackets.VotePacket;
 
 namespace CompCube_Server.Gameplay.Match;
 
@@ -27,8 +28,6 @@ public class GameMatch
     private VoteManager _voteManager;
     
     private MatchSettings _matchSettings;
-
-    private VotingMap? _selectedMap;
 
     private const int MmrLossOnDisconnect = 50;
 
@@ -53,8 +52,6 @@ public class GameMatch
         _blueTeam = new Team(blueTeamPlayers, Team.TeamName.Blue);
         
         _id = _matchLog.GetValidMatchId();
-        
-        _redTeam.OnTeamMemberDisconnected += OnTeamMemberDisconnected;
     }
 
     public void StartMatch() =>
@@ -62,12 +59,65 @@ public class GameMatch
 
     public async Task StartMatchAsync()
     {
+        _redTeam.OnTeamMemberDisconnected += HandleTeamMemberDisconnected;
+        _blueTeam.OnTeamMemberDisconnected += HandleTeamMemberDisconnected;
         
+        _voteManager.OnMapDetermined += HandleMapDetermined;
+        _voteManager.OnMapVotedFor += HandleMapVotedFor;
+
+        await SendAllClientsPacketAsync(new MatchCreatedPacket(_voteManager.VotingOptions, _redTeam.TeamData, _blueTeam.TeamData, 30));
     }
 
-    private void OnTeamMemberDisconnected(int remainingCount)
+    private async void HandleMapVotedFor(IConnectedClient client, int mapIndex)
+    {
+        try
+        {
+            await SendAllClientsPacketAsync(new VotePacket(mapIndex, client.UserInfo.UserId));
+        }
+        catch (Exception e)
+        {
+            _logger.Error(e);
+        }
+    }
+
+    private async void HandleMapDetermined(VotingMap map)
+    {
+        try
+        {
+            await SendAllClientsPacketAsync(new MatchStartedPacket(map, 15, 25, _redTeam.TeamData, _blueTeam.TeamData));
+        }
+        catch (Exception e)
+        {
+            _logger.Error(e);
+        }
+    }
+
+    private async void HandleTeamMemberDisconnected(TeamData teamData, UserInfo userInfo, int remainingCount)
     {
         
+        
+        if (remainingCount == 0)
+        {
+            await EndMatchPrematurely("Opposing player(s) disconnected!");
+            return;
+        }
+
+        await SendAllClientsPacketAsync(new UserDisconnectedPacket(userInfo.UserId));
+    }
+
+    private async Task EndMatchPrematurely(string reason)
+    {
+        if (_matchSettings.Competitive)
+        {
+            var winningTeam = _blueTeam.Players.Count > 0 ? _redTeam : _blueTeam;
+            var losingTeam = winningTeam.Name == Team.TeamName.Red ? _blueTeam : _redTeam;
+
+            var mmrChange = GetMmrChange(winningTeam, losingTeam);
+            
+            winningTeam.DoForEach(i =>  _userData.ApplyMmrChange(i.UserInfo, mmrChange));
+        }
+
+        await SendAllClientsPacketAsync(new PrematureMatchEndPacket(reason));
     }
 
     private async Task SendAllClientsPacketAsync(ServerPacket packet)
@@ -78,12 +128,12 @@ public class GameMatch
             await player.SendPacket(packet);
     }
 
-    private int GetMmrChange(UserInfo winner, UserInfo loser)
+    private int GetMmrChange(Team winningTeam, Team losingTeam)
     {
         if (_matchSettings.Competitive)
             return 0;
         
-        var p = (1.0 / (1.0 + Math.Pow(10, ((winner.Mmr - loser.Mmr) / 400.0))));
+        var p = (1.0 / (1.0 + Math.Pow(10, ((winningTeam.AverageMmr - losingTeam.AverageMmr) / 400.0))));
 
         return (int) (KFactor * p);
     }

@@ -3,6 +3,7 @@ using CompCube_Models.Models.Packets;
 using CompCube_Models.Models.Packets.ServerPackets;
 using CompCube_Models.Models.Packets.UserPackets;
 using CompCube_Server.Interfaces;
+using VotePacket = CompCube_Models.Models.Packets.UserPackets.VotePacket;
 
 namespace CompCube_Server.Networking.Client;
 

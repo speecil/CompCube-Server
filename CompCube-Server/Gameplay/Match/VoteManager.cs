@@ -13,8 +13,10 @@ public class VoteManager
     
     public readonly VotingMap[] VotingOptions;
 
-    private Dictionary<UserInfo, VotingMap?> _votes;
+    private readonly Dictionary<UserInfo, VotingMap?> _votes;
     public event Action<VotingMap>? OnMapDetermined;
+
+    public event Action<IConnectedClient, int>? OnMapVotedFor;
     
 
     private readonly Timer _timer;
@@ -57,7 +59,11 @@ public class VoteManager
     {
         client.OnUserVoted -= HandleUserVote;
 
-        _votes[client.UserInfo] = VotingOptions[vote.VoteIndex];
+        var map = VotingOptions[vote.VoteIndex];
+
+        _votes[client.UserInfo] = map;
+        
+        OnMapVotedFor?.Invoke(client, vote.VoteIndex);
         
         DetermineVoteIfAllowed();
     }
