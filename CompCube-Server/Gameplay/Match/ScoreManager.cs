@@ -8,10 +8,12 @@ public class ScoreManager
 {
     private readonly Dictionary<IConnectedClient, Score?> _scores;
 
-    public event Action<Dictionary<IConnectedClient, Score>>? OnScoresSubmitted;
+    private readonly Action<Dictionary<IConnectedClient, Score>> _onScoresDecidedCallback;
     
-    public ScoreManager(Dictionary<IConnectedClient, GameMatch.Team> players)
+    public ScoreManager(Dictionary<IConnectedClient, GameMatch.Team> players, Action<Dictionary<IConnectedClient, Score>> onScoresDecidedCallback)
     {
+        _onScoresDecidedCallback = onScoresDecidedCallback;
+        
         _scores = players.Select(i => new KeyValuePair<IConnectedClient, Score?>(i.Key, null)).ToDictionary();
 
         foreach (var player in players)
@@ -34,7 +36,7 @@ public class ScoreManager
         if (_scores.Any(i => i.Value == null))
             return;
         
-        OnScoresSubmitted?.Invoke(_scores.Select(i => new KeyValuePair<IConnectedClient,Score>(i.Key, i.Value ?? Score.Empty)).ToDictionary());
+        _onScoresDecidedCallback.Invoke(_scores.Select(i => new KeyValuePair<IConnectedClient,Score>(i.Key, i.Value ?? Score.Empty)).ToDictionary());
     }
 
     public void HandlePlayerDisconneced(IConnectedClient player)

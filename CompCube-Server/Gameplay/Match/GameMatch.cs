@@ -1,9 +1,12 @@
-﻿using CompCube_Models.Models.Match;
+﻿using CompCube_Models.Models.Map;
+using CompCube_Models.Models.Match;
+using CompCube_Models.Models.Packets;
 using CompCube_Server.Interfaces;
+using CompCube_Server.SQL;
 
 namespace CompCube_Server.Gameplay.Match;
 
-public class GameMatch
+public class GameMatch(MapData mapData)
 {
     private MatchSettings _matchSettings;
 
@@ -12,20 +15,21 @@ public class GameMatch
     private readonly Dictionary<Team, int> _points = new();
 
     private ScoreManager? _currentRoundScoreManager = null;
+    private VoteManager? _currentRoundVoteManager = null;
     
     public void Init(IConnectedClient[] red, IConnectedClient[] blue, MatchSettings settings)
     {
         _matchSettings = settings;
         
-        SetupPlayer(red, Team.Red);
-        SetupPlayer(blue, Team.Blue);
+        SetupTeam(red, Team.Red);
+        SetupTeam(blue, Team.Blue);
         
         _points.Add(Team.Red, 0);
         _points.Add(Team.Blue, 0);
         
         return;
         
-        void SetupPlayer(IConnectedClient[] players, Team team)
+        void SetupTeam(IConnectedClient[] players, Team team)
         {
             foreach (var player in players)
             {
@@ -38,9 +42,16 @@ public class GameMatch
 
     public async Task StartMatchAsync()
     {
-        _currentRoundScoreManager = new ScoreManager(_teams);
+        _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData, HandleVoteDecided);
+        // send match start packets here
+        // send round start packets here
         
-        _currentRoundScoreManager.OnScoresSubmitted += HandleScores;
+        
+    }
+
+    private void HandleVoteDecided(VotingMap votingMap)
+    {
+        _currentRoundScoreManager = new ScoreManager(_teams, HandleScores);
     }
 
     private void HandleScores(Dictionary<IConnectedClient, Score> scores)
@@ -53,7 +64,19 @@ public class GameMatch
 
         if (bluePoints >= redPoints)
             _points[Team.Blue] += 1;
+
+        if (_currentRoundScoreManager != null)
+            _currentRoundScoreManager.OnScoresSubmitted -= HandleScores;
         
+        // send round end packets here
+        
+        if (_points.Any(i => i.Value == 2))
+        {
+            // end match
+            return;
+        }
+
+        _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData);
     }
 
     public void StartMatch() => StartMatchAsync();
@@ -63,6 +86,20 @@ public class GameMatch
         client.OnDisconnected -= HandleClientDisconnect;
 
         _teams.Remove(client);
+        
+        _currentRoundScoreManager?.HandlePlayerDisconneced(client);
+        _currentRoundVoteManager?.HandlePlayerDisconneced(client);
+    }
+
+    private async Task SendPacketToClients(ServerPacket packet, Team? teamFilter = null)
+    {
+        var players = _teams.Keys.ToList();
+
+        if (teamFilter != null)
+            players = players.Where(i => _teams[i] == teamFilter).ToList();
+
+        foreach (var player in players)
+            await player.SendPacket(packet);
     }
 
     public enum Team
