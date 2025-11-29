@@ -83,11 +83,18 @@ public class GameMatch(MapData mapData, Logger logger)
 
     private async void HandleVoteDecided(VotingMap votingMap)
     {
-        _currentRoundScoreManager = new ScoreManager(_teams, HandleResults);
+        try
+        {
+            _currentRoundScoreManager = new ScoreManager(_teams, HandleResults);
 
-        await Task.Delay(3000);
+            await Task.Delay(3000);
 
-        await SendPacketToClients(new BeginGameTransitionPacket(votingMap, 15, 25));
+            await SendPacketToClients(new BeginGameTransitionPacket(votingMap, 15, 25));
+        }
+        catch (Exception e)
+        {
+            logger.Error(e);
+        }
     }
 
     private async void HandleResults(Dictionary<IConnectedClient, Score> scores)
