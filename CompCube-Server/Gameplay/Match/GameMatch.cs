@@ -1,12 +1,16 @@
-﻿using CompCube_Models.Models.Map;
+﻿using CompCube_Models.Models.ClientData;
+using CompCube_Models.Models.Map;
 using CompCube_Models.Models.Match;
 using CompCube_Models.Models.Packets;
+using CompCube_Models.Models.Packets.ServerPackets;
+using CompCube_Models.Models.Packets.UserPackets;
 using CompCube_Server.Interfaces;
+using CompCube_Server.Logging;
 using CompCube_Server.SQL;
 
 namespace CompCube_Server.Gameplay.Match;
 
-public class GameMatch(MapData mapData)
+public class GameMatch(MapData mapData, Logger logger)
 {
     private MatchSettings _matchSettings;
 
@@ -34,9 +38,22 @@ public class GameMatch(MapData mapData)
             foreach (var player in players)
             {
                 player.OnDisconnected += HandleClientDisconnect;
+                player.OnUserVoted += HandlePlayerVoted;
                 
                 _teams.Add(player, team);
             }
+        }
+    }
+
+    private async void HandlePlayerVoted(VotePacket vote, IConnectedClient client)
+    {
+        try
+        {
+            await SendPacketToClients(new PlayerVotedPacket(vote.VoteIndex, client.UserInfo.UserId), null, [client]);
+        }
+        catch (Exception e)
+        {
+            logger.Error(e);
         }
     }
 
@@ -44,39 +61,64 @@ public class GameMatch(MapData mapData)
     {
         _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData, HandleVoteDecided);
         // send match start packets here
-        // send round start packets here
+
+        await SendPacketToClients(new MatchCreatedPacket(_teams.Where(i => i.Value == Team.Red).Select(i => i.Key.UserInfo).ToArray(), _teams.Where(i => i.Value == Team.Blue).Select(i => i.Key.UserInfo).ToArray()));
         
-        
+        StartRound();
     }
 
-    private void HandleVoteDecided(VotingMap votingMap)
+    private async void StartRound()
     {
-        _currentRoundScoreManager = new ScoreManager(_teams, HandleScores);
-    }
-
-    private void HandleScores(Dictionary<IConnectedClient, Score> scores)
-    {
-        var redPoints = scores.Where(i => _teams[i.Key] == Team.Red).Sum(i => i.Value.Points);
-        var bluePoints = scores.Where(i => _teams[i.Key] == Team.Blue).Sum(i => i.Value.Points);
-
-        if (redPoints >= bluePoints)
-            _points[Team.Red] += 1;
-
-        if (bluePoints >= redPoints)
-            _points[Team.Blue] += 1;
-
-        if (_currentRoundScoreManager != null)
-            _currentRoundScoreManager.OnScoresSubmitted -= HandleScores;
-        
-        // send round end packets here
-        
-        if (_points.Any(i => i.Value == 2))
+        try
         {
-            // end match
-            return;
-        }
+            _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData, HandleVoteDecided);
 
-        _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData);
+            await SendPacketToClients(new RoundStartedPacket(_currentRoundVoteManager.Options, 30));
+        }
+        catch (Exception e)
+        {
+            logger.Error(e);
+        }
+    }
+
+    private async void HandleVoteDecided(VotingMap votingMap)
+    {
+        _currentRoundScoreManager = new ScoreManager(_teams, HandleResults);
+
+        await Task.Delay(3000);
+
+        await SendPacketToClients(new BeginGameTransitionPacket(votingMap, 15, 25));
+    }
+
+    private async void HandleResults(Dictionary<IConnectedClient, Score> scores)
+    {
+        try
+        {
+            var redPoints = scores.Where(i => _teams[i.Key] == Team.Red).Sum(i => i.Value.Points);
+            var bluePoints = scores.Where(i => _teams[i.Key] == Team.Blue).Sum(i => i.Value.Points);
+
+            if (redPoints >= bluePoints)
+                _points[Team.Red] += 1;
+
+            if (bluePoints >= redPoints)
+                _points[Team.Blue] += 1;
+
+            await SendPacketToClients(new RoundResultsPacket(
+                scores.Select(i => new KeyValuePair<UserInfo, Score>(i.Key.UserInfo, i.Value)).ToDictionary(),
+                _points[Team.Red], _points[Team.Blue]));
+        
+            if (_points.Any(i => i.Value == 2))
+            {
+                // end match
+                return;
+            }
+
+            StartRound();
+        }
+        catch (Exception e)
+        {
+            logger.Error(e);
+        }
     }
 
     public void StartMatch() => StartMatchAsync();
@@ -91,12 +133,15 @@ public class GameMatch(MapData mapData)
         _currentRoundVoteManager?.HandlePlayerDisconneced(client);
     }
 
-    private async Task SendPacketToClients(ServerPacket packet, Team? teamFilter = null)
+    private async Task SendPacketToClients(ServerPacket packet, Team? teamFilter = null, IConnectedClient[]? playerFilter = null)
     {
         var players = _teams.Keys.ToList();
 
         if (teamFilter != null)
             players = players.Where(i => _teams[i] == teamFilter).ToList();
+
+        if (playerFilter != null)
+            players = players.Where(i => !playerFilter.Contains(i)).ToList();
 
         foreach (var player in players)
             await player.SendPacket(packet);

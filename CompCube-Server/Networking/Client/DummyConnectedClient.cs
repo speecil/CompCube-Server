@@ -25,7 +25,7 @@ public class DummyConnectedClient(UserInfo userInfo) : IConnectedClient
                 break;
             case ServerPacket.ServerPacketTypes.OpponentVoted:
                 break;
-            case ServerPacket.ServerPacketTypes.MatchStarted:
+            case ServerPacket.ServerPacketTypes.MatchCreated:
                 var matchStartedPacket = packet as MatchStartedPacket ?? throw new Exception("no way this is a valid thing that can happen lmfao");
 
                 await Task.Delay(20000);
