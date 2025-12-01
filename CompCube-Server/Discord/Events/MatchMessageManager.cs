@@ -16,13 +16,13 @@ public class MatchMessageManager(MatchInfoMessageFormatter messageFormatter, Log
     {
         try
         {
-            if (results.Premature || results.Map == null)
+            if (results.Premature)
                 return;
 
             if (_matchChannel == null) 
                 return;
 
-            var embed = await messageFormatter.GetEmbed(results, "Match results:", false);
+            var embed = messageFormatter.GetEmbed(results, "Match results:", false);
 
             await _matchChannel.SendMessageAsync(new MessageProperties()
             {

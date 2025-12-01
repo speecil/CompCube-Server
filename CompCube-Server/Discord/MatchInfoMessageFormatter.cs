@@ -6,20 +6,16 @@ using NetCord.Rest;
 
 namespace CompCube_Server.Discord;
 
-public class MatchInfoMessageFormatter(BeatSaverApiWrapper beatSaver)
+public class MatchInfoMessageFormatter
 {
-    public async Task<EmbedProperties> GetEmbed(MatchResultsData results, string header, bool showRelativeTimestamp)
+    public EmbedProperties GetEmbed(MatchResultsData results, string header, bool showRelativeTimestamp)
     {
-        var beatSaverMap = results.Map == null ? null : await beatSaver.GetBeatmapFromHash(results.Map.Hash);
-
         var embed = new EmbedProperties
         {
             Title = $"{header}",
-            Description = beatSaverMap is null ? "" : $"{beatSaverMap?.Metadata.SongAuthorName} - {beatSaverMap?.Metadata.SongName} ({results.Map?.Difficulty}) (https://beatsaver.com/maps/{beatSaverMap?.ID})",
-            Thumbnail = new EmbedThumbnailProperties(beatSaverMap?.LatestVersion.CoverURL),
             Fields =
             [
-                new()
+                /*new()
                 {
                     Name = "Winner",
                     Value = $"{FormatMatchScore(results.Winner)} ({results.Winner.User.Mmr} -> {results.Winner.User.Mmr + results.MmrChange})",
@@ -30,7 +26,7 @@ public class MatchInfoMessageFormatter(BeatSaverApiWrapper beatSaver)
                     Name = "Loser",
                     Value = $"{FormatMatchScore(results.Loser)} ({results.Loser.User.Mmr} -> {results.Loser.User.Mmr - results.MmrChange})",
                     Inline = false
-                },
+                },*/
                 new()
                 {
                     Name = "MMR Exchange",
@@ -54,7 +50,4 @@ public class MatchInfoMessageFormatter(BeatSaverApiWrapper beatSaver)
 
         return embed;
     }
-    
-    private static string FormatMatchScore(MatchScore score) =>
-        $"{score.User.Username} - {((score.Score ?? Score.Empty).RelativeScore * 100).ToString("F2", CultureInfo.InvariantCulture)}% {(score.Score is { FullCombo: true } ? "FC" : $"{score.Score?.Misses}x")}";
 }

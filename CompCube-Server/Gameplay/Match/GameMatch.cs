@@ -4,13 +4,14 @@ using CompCube_Models.Models.Match;
 using CompCube_Models.Models.Packets;
 using CompCube_Models.Models.Packets.ServerPackets;
 using CompCube_Models.Models.Packets.UserPackets;
+using CompCube_Server.Discord.Events;
 using CompCube_Server.Interfaces;
 using CompCube_Server.Logging;
 using CompCube_Server.SQL;
 
 namespace CompCube_Server.Gameplay.Match;
 
-public class GameMatch(MapData mapData, Logger logger)
+public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchLog matchLog, MatchMessageManager messageManager)
 {
     private MatchSettings _matchSettings;
 
@@ -20,6 +21,13 @@ public class GameMatch(MapData mapData, Logger logger)
 
     private ScoreManager? _currentRoundScoreManager = null;
     private VoteManager? _currentRoundVoteManager = null;
+
+    private int _roundCount = 0;
+
+    private int? _mmrChangeIfRedWins;
+    private int? _mmrChangeIfBlueWins;
+
+    private int _id = matchLog.GetValidMatchId();
     
     public void Init(IConnectedClient[] red, IConnectedClient[] blue, MatchSettings settings)
     {
@@ -30,6 +38,9 @@ public class GameMatch(MapData mapData, Logger logger)
         
         _points.Add(Team.Red, 0);
         _points.Add(Team.Blue, 0);
+        
+        _mmrChangeIfRedWins = GetMmrChange(red.Select(i => i.UserInfo).ToArray(), blue.Select(i => i.UserInfo).ToArray());
+        _mmrChangeIfBlueWins = GetMmrChange(blue.Select(i => i.UserInfo).ToArray(), red.Select(i => i.UserInfo).ToArray());
         
         return;
         
@@ -60,7 +71,6 @@ public class GameMatch(MapData mapData, Logger logger)
     public async Task StartMatchAsync()
     {
         _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData, HandleVoteDecided);
-        // send match start packets here
 
         await SendPacketToClients(new MatchCreatedPacket(_teams.Where(i => i.Value == Team.Red).Select(i => i.Key.UserInfo).ToArray(), _teams.Where(i => i.Value == Team.Blue).Select(i => i.Key.UserInfo).ToArray()));
         
@@ -71,9 +81,10 @@ public class GameMatch(MapData mapData, Logger logger)
     {
         try
         {
+            _roundCount++;
             _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData, HandleVoteDecided);
 
-            await SendPacketToClients(new RoundStartedPacket(_currentRoundVoteManager.Options, 30));
+            await SendPacketToClients(new RoundStartedPacket(_currentRoundVoteManager.Options, 30, _roundCount));
         }
         catch (Exception e)
         {
@@ -109,16 +120,16 @@ public class GameMatch(MapData mapData, Logger logger)
 
             if (bluePoints >= redPoints)
                 _points[Team.Blue] += 1;
-
-            await SendPacketToClients(new RoundResultsPacket(
-                scores.Select(i => new KeyValuePair<UserInfo, Score>(i.Key.UserInfo, i.Value)).ToDictionary(),
-                _points[Team.Red], _points[Team.Blue]));
         
             if (_points.Any(i => i.Value == 2))
             {
-                // end match
+                await EndMatchAsync();
                 return;
             }
+            
+            await SendPacketToClients(new RoundResultsPacket(
+                scores.Select(i => new KeyValuePair<UserInfo, Score>(i.Key.UserInfo, i.Value)).ToDictionary(),
+                _points[Team.Red], _points[Team.Blue]));
 
             StartRound();
         }
@@ -130,9 +141,38 @@ public class GameMatch(MapData mapData, Logger logger)
 
     public void StartMatch() => StartMatchAsync();
 
+    private async Task EndMatchAsync()
+    {
+        var redWon = _points[Team.Red] > _points[Team.Blue];
+        
+        var mmrChange = (redWon ? _mmrChangeIfRedWins : _mmrChangeIfBlueWins) ?? 0;
+        
+        DoForEachClient(i => i.OnDisconnected -= HandleClientDisconnect);
+        
+        await SendPacketToClients(new MatchResultsPacket(mmrChange, _points[Team.Red], _points[Team.Blue]));
+        
+        DoForEachClient(i => i.Disconnect());
+
+        var winningPlayers = _teams.Where(i => i.Value == (redWon ? Team.Red : Team.Blue)).Select(i => i.Key.UserInfo.UserId)
+            .ToArray();
+        var losingPlayers = _teams.Where(i => i.Value == (redWon ? Team.Blue : Team.Red))
+            .Select(i => i.Key.UserInfo.UserId).ToArray();
+        
+        var matchResultsData = new MatchResultsData(winningPlayers, losingPlayers, mmrChange, false, _id, DateTime.Now);
+        
+        matchLog.AddMatchToTable(matchResultsData);
+        
+        messageManager.PostMatchResults(matchResultsData);
+    }
+
     private void HandleClientDisconnect(IConnectedClient client)
     {
         client.OnDisconnected -= HandleClientDisconnect;
+
+        if (_teams.All(i => i.Value != _teams[client]))
+        {
+            
+        }
 
         _teams.Remove(client);
         
@@ -152,6 +192,27 @@ public class GameMatch(MapData mapData, Logger logger)
 
         foreach (var player in players)
             await player.SendPacket(packet);
+    }
+
+    private void DoForEachClient(Action<IConnectedClient> action)
+    {
+        var players = _teams.Keys.ToList();
+        
+        foreach (var player in players)
+            action.Invoke(player);
+    }
+    
+    private int GetMmrChange(UserInfo[] winner, UserInfo[] loser)
+    {
+        if (_matchSettings.Competitive)
+            return 0;
+
+        var avgWinnerMmr = winner.Sum(i => i.Mmr) / winner.Length;
+        var avgLoserMmr = loser.Sum(i => i.Mmr) / winner.Length;
+        
+        var p = (1.0 / (1.0 + Math.Pow(10, ((avgWinnerMmr - avgLoserMmr) / 400.0))));
+
+        return (int) (_matchSettings.KFactor * p);
     }
 
     public enum Team

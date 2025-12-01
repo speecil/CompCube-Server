@@ -44,7 +44,7 @@ public class StandardCompetitiveQueue : StandardQueue
                     _clientPool.Remove(comparisonClient);
                     _clientPool.Remove(client);
 
-                    var match = _gameMatchFactory.CreateNewMatch([client.Client], [comparisonClient.Client], new MatchSettings(true, true));
+                    var match = _gameMatchFactory.CreateNewMatch([client.Client], [comparisonClient.Client], new MatchSettings(true, true, 75, 50));
                     match.StartMatch();
                 }
     }

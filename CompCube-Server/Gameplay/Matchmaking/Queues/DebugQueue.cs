@@ -13,7 +13,7 @@ public class DebugQueue(Logger logger, GameMatchFactory gameMatchFactory, UserDa
 
     public void AddClientToPool(IConnectedClient client)
     {
-        var match = gameMatchFactory.CreateNewMatch([client], [new DummyConnectedClient(userData.GetUserById("0") ?? throw new Exception("Could not find debug user data!"))], new MatchSettings(false, false));
+        var match = gameMatchFactory.CreateNewMatch([client], [new DummyConnectedClient(userData.GetUserById("0") ?? throw new Exception("Could not find debug user data!"))], new MatchSettings(false, false, 0, 0));
         match.StartMatch();
     }
 }

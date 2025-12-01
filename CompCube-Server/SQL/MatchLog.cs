@@ -34,7 +34,7 @@ public class MatchLog(UserData userData) : Database
                 return null;
             
             var matchId = reader.GetInt32(0);
-            var winner = _userData.GetUserById(reader.GetString(1)) ?? throw new Exception($"Could not find user {reader.GetString(1)}");
+            var winner = Array.(reader.GetString(1)) ?? throw new Exception($"Could not find user {reader.GetString(1)}"));
             var loser = _userData.GetUserById(reader.GetString(2)) ?? throw new Exception($"Could not find user {reader.GetString(2)}");
             var exchange = reader.GetInt32(3);
             var winnerScore = Score.Deserialize(reader.GetString(4));
@@ -43,7 +43,7 @@ public class MatchLog(UserData userData) : Database
             var map = VotingMap.Deserialize(reader.GetString(7));
             var time = DateTime.Parse(reader.GetString(8)).ToLocalTime();
 
-            return new MatchResultsData(new MatchScore(winner, winnerScore), new MatchScore(loser, loserScore),
+            return new MatchResultsData(winner, loser,
                 exchange, map, prematureEnd, matchId, time);
         }
 
