@@ -5,11 +5,11 @@ namespace CompCube_Server.SQL;
 
 public abstract class Database : IDisposable
 {
-    protected abstract string DatabaseName { get; }
+    private readonly string DatabaseName = "Data";
     
     protected readonly SQLiteConnection Connection;
 
-    protected static string DataFolderPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
+    private static string DataFolderPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
 
     public bool IsOpen => Connection.State == ConnectionState.Open;
 

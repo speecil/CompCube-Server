@@ -5,8 +5,6 @@ namespace CompCube_Server.SQL;
 
 public class MapData(Logger logger) : Database
 {
-    protected override string DatabaseName => "MapData";
-    
     protected override void CreateInitialTables()
     {
         var createDbCommand = Connection.CreateCommand();

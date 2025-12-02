@@ -153,10 +153,10 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         
         DoForEachClient(i => i.Disconnect());
 
-        var winningPlayers = _teams.Where(i => i.Value == (redWon ? Team.Red : Team.Blue)).Select(i => i.Key.UserInfo.UserId)
+        var winningPlayers = _teams.Where(i => i.Value == (redWon ? Team.Red : Team.Blue)).Select(i => i.Key.UserInfo)
             .ToArray();
         var losingPlayers = _teams.Where(i => i.Value == (redWon ? Team.Blue : Team.Red))
-            .Select(i => i.Key.UserInfo.UserId).ToArray();
+            .Select(i => i.Key.UserInfo).ToArray();
         
         var matchResultsData = new MatchResultsData(winningPlayers, losingPlayers, mmrChange, false, _id, DateTime.Now);
         

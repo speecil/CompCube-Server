@@ -7,12 +7,10 @@ namespace CompCube_Server.SQL;
 
 public class UserData : Database
 {
-    protected override string DatabaseName => "LoungeData";
-
     public UserInfo? GetUserByDiscordId(string discordId)
     {
         var command = Connection.CreateCommand();
-        command.CommandText = "SELECT * FROM userData WHERE discordId = @discordId LIMIT 1";
+        command.CommandText = "SELECT * FROM userData JOIN rankingData USING (id) WHERE discordId = @discordId LIMIT 1";
         command.Parameters.AddWithValue("discordId", discordId);
         
         using var reader = command.ExecuteReader();
@@ -36,16 +34,103 @@ public class UserData : Database
     public UserInfo? GetUserById(string userId)
     {
         var command = Connection.CreateCommand();
-        command.CommandText = "SELECT * FROM userData WHERE userData.id = @id LIMIT 1";
+        command.CommandText = "SELECT * FROM userData JOIN rankingData USING (id) WHERE userData.id = @id LIMIT 1";
         command.Parameters.AddWithValue("id", userId);
         using var reader = command.ExecuteReader();
 
         while (reader.Read())
-            return GetUserInfoFromReader(reader);
+        {
+            if (reader.FieldCount == 0) 
+                return null;
+            
+            var mmr = reader.GetInt32(1);
+            var userName = reader.GetString(2);
+            Badge? badge = null;
+            string? discordId = null;
+
+            var rankCommand = Connection.CreateCommand();
+            rankCommand.CommandText = "SELECT COUNT(*) FROM userData WHERE mmr > @mmrThreshold ORDER BY mmr";
+            rankCommand.Parameters.AddWithValue("mmrThreshold", mmr);
+            var rank = (long) (rankCommand.ExecuteScalar() ?? throw new Exception("Could not get user rank!")) + 1;
+
+            if (!reader.IsDBNull(3))
+                badge = GetBadge(reader.GetString(3));
+            
+            if (!reader.IsDBNull(4))
+                discordId = reader.GetString(4);
+
+            var banned = reader.GetBoolean(5);
+
+            var wins = reader.GetInt32(6);
+            var totalGames = reader.GetInt32(7);
+            var winstreak = reader.GetInt32(8);
+            var highestWinstreak = reader.GetInt32(9);
+            
+            return new UserInfo(userName, userId, mmr, DivisionManager.GetDivisionFromMmr(mmr), badge, rank, discordId, banned, wins, totalGames, winstreak, highestWinstreak);
+        }
         
         return null;
     }
 
+    public void UpdateUserDataFromMatch(UserInfo userInfo, int mmrChange, bool won)
+    {
+        SetMmr(userInfo, won ? mmrChange : -mmrChange);
+        
+        var command = Connection.CreateCommand();
+        command.CommandText = "UPDATE rankingData SET totalGames = @newTotalGames WHERE id = @id";
+        command.Parameters.AddWithValue("newTotalGames", userInfo.TotalGames + 1);
+        command.Parameters.AddWithValue("id", userInfo.UserId);
+        command.ExecuteNonQuery();
+
+        if (!won)
+        {
+            command.CommandText = "UPDATE rankingData SET highestWinstreak = 0 WHERE id = @id LIMIT 1";
+            command.Parameters.AddWithValue("id", userInfo.UserId);
+            command.ExecuteNonQuery();
+            return;
+        }
+        
+        command.CommandText = "UPDATE rankingData SET wins = @newWins WHERE id = @id LIMIT 1";
+        command.Parameters.AddWithValue("newWins", userInfo.Wins + 1);
+        command.Parameters.AddWithValue("id", userInfo.UserId);
+        command.ExecuteNonQuery();
+
+        command = Connection.CreateCommand();
+        command.CommandText = "UPDATE rannkingData SET winstreak = @newWinstreak WHERE id = @id LIMIT 1";
+        command.Parameters.AddWithValue("newWinstreak", userInfo.Winstreak + 1);
+        command.Parameters.AddWithValue("id", userInfo.UserId);
+        command.ExecuteNonQuery();
+
+        if (userInfo.Winstreak + 1 <= userInfo.HighestWinstreak) 
+            return;
+            
+        command = Connection.CreateCommand();
+        command.CommandText = "UPDATE rankingData SET highestWinstreak = @newHighestWinstreak WHERE id = @id LIMIT 1";
+        command.Parameters.AddWithValue("newHighestWinstreak", userInfo.HighestWinstreak + 1);
+        command.Parameters.AddWithValue("id", userInfo.UserId);
+        command.ExecuteNonQuery();
+    }
+
+    public List<UserInfo> GetAllUsers()
+    {
+        var command = Connection.CreateCommand();
+        command.CommandText = "SELECT id FROM userData JOIN rankingData USING (id) ORDER BY mmr DESC";
+        
+        var userList = new List<UserInfo>();
+        
+        using var reader = command.ExecuteReader();
+
+        while (reader.Read())
+        {
+            var user = GetUserInfoFromReader(reader);
+            if (user == null) 
+                continue;
+            userList.Add(user);
+        }
+        
+        return userList;
+    }
+    
     private UserInfo? GetUserInfoFromReader(SQLiteDataReader reader)
     {
         if (reader.FieldCount == 0) 
@@ -78,72 +163,11 @@ public class UserData : Database
         return new UserInfo(userName, userId, mmr, DivisionManager.GetDivisionFromMmr(mmr), badge, rank, discordId, banned, wins, losses, winstreak, highestWinstreak);
     }
 
-    public void UpdateUserDataFromMatch(UserInfo userInfo, MatchResultsData results)
-    {
-        var won = results.Winner.User.UserId == userInfo.UserId;
-
-        var command = Connection.CreateCommand();
-        
-        if (won)
-        {
-            command.CommandText = "UPDATE userData SET wins = @newWins WHERE id = @id LIMIT 1";
-            command.Parameters.AddWithValue("newWins", userInfo.Wins + 1);
-            command.Parameters.AddWithValue("id", userInfo.UserId);
-            command.ExecuteNonQuery();
-
-            command = Connection.CreateCommand();
-            command.CommandText = "UPDATE userData SET winstreak = @newWinstreak WHERE id = @id LIMIT 1";
-            command.Parameters.AddWithValue("newWinstreak", userInfo.Winstreak + 1);
-            command.Parameters.AddWithValue("id", userInfo.UserId);
-            command.ExecuteNonQuery();
-
-            if (userInfo.Winstreak + 1 <= userInfo.HighestWinstreak) 
-                return;
-            
-            command = Connection.CreateCommand();
-            command.CommandText = "UPDATE userData SET highestWinstreak = @newHighestWinstreak WHERE id = @id LIMIT 1";
-            command.Parameters.AddWithValue("newHighestWinstreak", userInfo.HighestWinstreak + 1);
-            command.ExecuteNonQuery();
-
-            return;
-        }
-
-        command = Connection.CreateCommand();
-        command.CommandText = "UPDATE userData SET losses = @newLosses WHERE id = @id LIMIT 1";
-        command.Parameters.AddWithValue("newLosses", userInfo.Losses + 1);
-        command.Parameters.AddWithValue("id", userInfo.UserId);
-        command.ExecuteNonQuery();
-
-        command = Connection.CreateCommand();
-        command.CommandText = "UPDATE userData SET winstreak = 0 WHERE id = @id LIMIT 1";
-        command.Parameters.AddWithValue("id", userInfo.UserId);
-        command.ExecuteNonQuery();
-    }
-
-    public List<UserInfo> GetAllUsers()
+    private void SetMmr(UserInfo user, int newMmr)
     {
         var command = Connection.CreateCommand();
-        command.CommandText = "SELECT * FROM userData ORDER BY mmr DESC";
-        
-        var userList = new List<UserInfo>();
-        
-        using var reader = command.ExecuteReader();
-
-        while (reader.Read())
-        {
-            var user = GetUserInfoFromReader(reader);
-            if (user == null) continue;
-            userList.Add(user);
-        }
-        
-        return userList;
-    }
-
-    public void ApplyMmrChange(UserInfo user, int mmrChange)
-    {
-        var command = Connection.CreateCommand();
-        command.CommandText = "UPDATE userData SET mmr = @newMmr WHERE userData.id = @id";
-        command.Parameters.AddWithValue("newMmr", Math.Max(0, user.Mmr + mmrChange));
+        command.CommandText = "UPDATE rankingData SET mmr = @newMmr WHERE userData.id = @id";
+        command.Parameters.AddWithValue("newMmr", Math.Max(0, newMmr));
         command.Parameters.AddWithValue("id", user.UserId);
         command.ExecuteNonQuery();
     }
@@ -209,10 +233,13 @@ public class UserData : Database
         }
         
         var addToUserDataCommand = Connection.CreateCommand();
-        addToUserDataCommand.CommandText = "INSERT INTO userData VALUES (@userId, 1000, @userName, null, null, false, 0, 0, 0, 0)";
+        addToUserDataCommand.CommandText = "INSERT INTO userData VALUES (@userId, @userName, null, null, false)";
         addToUserDataCommand.Parameters.AddWithValue("userId", userId);
         addToUserDataCommand.Parameters.AddWithValue("userName", userName);
         addToUserDataCommand.ExecuteNonQuery();
+        
+        var addRankingDataCommand = Connection.CreateCommand();
+        addRankingDataCommand.CommandText = "INSERT INTO rankingData VALUES (@userId, 1000)";
 
         return GetUserById(userId) ?? throw new Exception("Could not find updated user!");
     }
@@ -220,6 +247,7 @@ public class UserData : Database
     protected override void CreateInitialTables()
     {
         CreateUserDataTable();
+        CreateRankingDataTable();
         CreateBadgeTable();
     }
 
@@ -229,21 +257,24 @@ public class UserData : Database
         command.CommandText = "CREATE TABLE IF NOT EXISTS badges (badgeName TEXT NOT NULL PRIMARY KEY, badgeColor TEXT NOT NULL, bold BOOLEAN NOT NULL)";
         command.ExecuteNonQuery();
     }
+
+    private void CreateRankingDataTable()
+    {
+        var command = Connection.CreateCommand();
+
+        command.CommandText = "CREATE TABLE IF NOT EXISTS rankingData (id TEXT NOT NULL PRIMARY KEY, mmr INT NOT NULL, wins INT NOT NULL DEFAULT 0, totalGames INT NOT NULL DEFAULT 0, winstreak INT NOT NULL DEFAULT 0, bestWinstreak INT NOT NULL DEFAULT 0)";
+        command.ExecuteNonQuery();
+    }
     
     private void CreateUserDataTable()
     {
         var dbCommand = Connection.CreateCommand();
         dbCommand.CommandText = "CREATE TABLE IF NOT EXISTS userData (" +
                                 "id TEXT NOT NULL PRIMARY KEY, " +
-                                "mmr INTEGER NOT NULL, " +
                                 "username TEXT NOT NULL, " +
                                 "badge TEXT, " +
                                 "discordID TEXT UNIQUE, " +
-                                "banned BOOLEAN NOT NULL, " +
-                                "wins INT NOT NULL, " +
-                                "losses INT NOT NULL, " +
-                                "winstreak INT NOT NULL, " +
-                                "highestWinstreak INT NOT NULL)";
+                                "banned BOOLEAN NOT NULL)";
         dbCommand.ExecuteNonQuery();
     }
 }

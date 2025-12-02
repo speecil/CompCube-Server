@@ -17,7 +17,7 @@ public class DummyConnectedClient(UserInfo userInfo) : IConnectedClient
 
     public async Task SendPacket(ServerPacket packet)
     {
-        switch (packet.PacketType)
+        /*switch (packet.PacketType)
         {
             case ServerPacket.ServerPacketTypes.MatchCreated:
                 await Task.Delay(5000);
@@ -38,7 +38,7 @@ public class DummyConnectedClient(UserInfo userInfo) : IConnectedClient
                 break;
             default:
                 throw new Exception("Unknown packet type");
-        }
+        }*/
     }
 
     public void Disconnect()
