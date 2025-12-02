@@ -5,7 +5,7 @@ namespace CompCube_Server.SQL;
 
 public abstract class Database : IDisposable
 {
-    private readonly string DatabaseName = "Data";
+    private const string DatabaseName = "Data";
     
     protected readonly SQLiteConnection Connection;
 
