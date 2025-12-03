@@ -36,7 +36,7 @@ public class ScoreManager
         if (_scores.Any(i => i.Value == null))
             return;
         
-        _onScoresDecidedCallback.Invoke(_scores.Select(i => new KeyValuePair<IConnectedClient,Score>(i.Key, i.Value ?? Score.Empty)).ToDictionary());
+        _onScoresDecidedCallback.Invoke(_scores.Select(i => new KeyValuePair<IConnectedClient,Score>(i.Key, i.Value ?? Score.Empty)).OrderBy(i => i.Value.Points).ToDictionary());
     }
 
     public void HandlePlayerDisconneced(IConnectedClient player)
