@@ -15,6 +15,8 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 {
     private MatchSettings _matchSettings;
 
+    private readonly Dictionary<UserInfo, Team> _initialPlayers = new();
+
     private readonly Dictionary<IConnectedClient, Team> _teams = new();
 
     private readonly Dictionary<Team, int> _points = new();
@@ -24,10 +26,9 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
     private int _roundCount = 0;
 
-    private int? _mmrChangeIfRedWins;
-    private int? _mmrChangeIfBlueWins;
+    private readonly Dictionary<Team, int> _mmrChanges = new();
 
-    private int _id = matchLog.GetValidMatchId();
+    private readonly int _id = matchLog.GetValidMatchId();
     
     public void Init(IConnectedClient[] red, IConnectedClient[] blue, MatchSettings settings)
     {
@@ -39,8 +40,8 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         _points.Add(Team.Red, 0);
         _points.Add(Team.Blue, 0);
         
-        _mmrChangeIfRedWins = GetMmrChange(red.Select(i => i.UserInfo).ToArray(), blue.Select(i => i.UserInfo).ToArray());
-        _mmrChangeIfBlueWins = GetMmrChange(blue.Select(i => i.UserInfo).ToArray(), red.Select(i => i.UserInfo).ToArray());
+        _mmrChanges[Team.Red] = GetMmrChange(red.Select(i => i.UserInfo).ToArray(), blue.Select(i => i.UserInfo).ToArray());
+        _mmrChanges[Team.Blue] = GetMmrChange(blue.Select(i => i.UserInfo).ToArray(), red.Select(i => i.UserInfo).ToArray());
         
         return;
         
@@ -52,6 +53,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
                 player.OnUserVoted += HandlePlayerVoted;
                 
                 _teams.Add(player, team);
+                _initialPlayers.Add(player.UserInfo, team);
             }
         }
     }
@@ -143,9 +145,9 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
     private async Task EndMatchAsync()
     {
-        var redWon = _points[Team.Red] > _points[Team.Blue];
+        var winningTeam = _points.Max().Key;
         
-        var mmrChange = (redWon ? _mmrChangeIfRedWins : _mmrChangeIfBlueWins) ?? 0;
+        var mmrChange = _mmrChanges[winningTeam];
         
         DoForEachClient(i => i.OnDisconnected -= HandleClientDisconnect);
         
@@ -153,10 +155,10 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         
         DoForEachClient(i => i.Disconnect());
 
-        var winningPlayers = _teams.Where(i => i.Value == (redWon ? Team.Red : Team.Blue)).Select(i => i.Key.UserInfo)
-            .ToArray();
-        var losingPlayers = _teams.Where(i => i.Value == (redWon ? Team.Blue : Team.Red))
-            .Select(i => i.Key.UserInfo).ToArray();
+        var winningPlayers = _initialPlayers.Where(i => i.Value == winningTeam)
+            .Select(i => i.Key).ToArray();
+        var losingPlayers = _initialPlayers.Where(i => i.Value != winningTeam)
+            .Select(i => i.Key).ToArray();
         
         var matchResultsData = new MatchResultsData(winningPlayers, losingPlayers, mmrChange, false, _id, DateTime.Now);
         
@@ -165,13 +167,27 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         messageManager.PostMatchResults(matchResultsData);
     }
 
+    private async Task EndMatchPrematurely(string reason)
+    {
+        await SendPacketToClients(new PrematureMatchEndPacket(reason));
+
+        var winningTeam = _points.Max().Key;
+        
+        var matchResults = new MatchResultsData(_initialPlayers.Where(i => i.Value == winningTeam).Select(i => i.Key).ToArray(), _initialPlayers.Where(i => i.Value != winningTeam).Select(i => i.Key).ToArray(), _mmrChanges[winningTeam], true, _id, DateTime.Now);
+        
+        matchLog.AddMatchToTable(matchResults);
+    }
+
     private void HandleClientDisconnect(IConnectedClient client)
     {
         client.OnDisconnected -= HandleClientDisconnect;
+        
+        userData.SetMmr(client.UserInfo, client.UserInfo.Mmr - 50);
 
         if (_teams.All(i => i.Value != _teams[client]))
         {
-            
+            EndMatchPrematurely("OpponentsDisconnected");
+            return;
         }
 
         _teams.Remove(client);

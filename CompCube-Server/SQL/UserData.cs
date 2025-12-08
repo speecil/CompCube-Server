@@ -163,7 +163,7 @@ public class UserData : Database
         return new UserInfo(userName, userId, mmr, DivisionManager.GetDivisionFromMmr(mmr), badge, rank, discordId, banned, wins, losses, winstreak, highestWinstreak);
     }
 
-    private void SetMmr(UserInfo user, int newMmr)
+    public void SetMmr(UserInfo user, int newMmr)
     {
         var command = Connection.CreateCommand();
         command.CommandText = "UPDATE rankingData SET mmr = @newMmr WHERE userData.id = @id";
