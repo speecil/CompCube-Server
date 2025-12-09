@@ -11,7 +11,7 @@ public class MatchLog(UserData userData) : Database
     protected override void CreateInitialTables()
     {
         var command = Connection.CreateCommand();
-        command.CommandText = "CREATE TABLE IF NOT EXISTS matchLog (id INT NOT NULL PRIMARY KEY, winnerIds TEXT NOT NULL, loserIds TEXT NOT NULL, mmrExchange INT NOT NULL, prematureEnd BOOL NOT NULL, map TEXT, time TEXT NOT NULL)";
+        command.CommandText = "CREATE TABLE IF NOT EXISTS matchLog (id INT NOT NULL PRIMARY KEY, winnerIds TEXT NOT NULL, loserIds TEXT NOT NULL, mmrExchange INT NOT NULL, prematureEnd BOOL NOT NULL, time TEXT NOT NULL)";
         command.ExecuteNonQuery();
     }
 
@@ -48,7 +48,7 @@ public class MatchLog(UserData userData) : Database
             throw new Exception("Match id is already taken!");
         
         var command = Connection.CreateCommand();
-        command.CommandText = "INSERT INTO matchLog VALUES (@id, @winnerId, @loserId, @mmrExchange, @winnerScore, @loserScore, @prematureEnd, @map, @time)";
+        command.CommandText = "INSERT INTO matchLog VALUES (@id, @winnerIds, @loserIds, @mmrExchange, @prematureEnd, @time)";
         
         command.Parameters.AddWithValue("id", results.Id);
         command.Parameters.AddWithValue("winnerIds", JsonConvert.SerializeObject(results.Winner.Select(i => i.UserId)));

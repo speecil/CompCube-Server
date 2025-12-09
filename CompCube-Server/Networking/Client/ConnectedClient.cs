@@ -61,6 +61,7 @@ public class ConnectedClient : IConnectedClient, IDisposable
         }
         catch (Exception e)
         {
+            Console.WriteLine(e);
             Disconnect();
         }
     }

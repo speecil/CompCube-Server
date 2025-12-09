@@ -14,8 +14,6 @@ public class VoteManager
 
     public readonly VotingMap[] Options;
 
-    public event Action<IConnectedClient, VotingMap?>? OnPlayerVoted;
-
     private readonly Action<VotingMap> _voteDecidedCallBack;
     
     public VoteManager(IConnectedClient[] players, MapData mapData, Action<VotingMap> voteDecidedCallBack)
@@ -35,7 +33,7 @@ public class VoteManager
     {
         _playerVotes[client] = Options[vote.VoteIndex];
         
-        OnPlayerVoted?.Invoke(client, Options[vote.VoteIndex]);
+        DecideVoteIfAllowed();
     }
 
     public void HandlePlayerDisconneced(IConnectedClient player)

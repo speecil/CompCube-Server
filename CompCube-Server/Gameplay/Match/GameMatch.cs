@@ -96,7 +96,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
             await Task.Delay(3000);
 
-            SendPacketToClients(new BeginGameTransitionPacket(votingMap, 15, 25));
+            SendPacketToClients(new BeginGameTransitionPacket(votingMap, 15, 10));
         }
         catch (Exception e)
         {
@@ -123,8 +123,8 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
                 return;
             }
             
-            SendPacketToClients(new RoundResultsPacket(
-                scores.Select(i => new KeyValuePair<UserInfo, Score>(i.Key.UserInfo, i.Value)).ToDictionary(),
+            await SendPacketToClients(new RoundResultsPacket(
+                scores.Select(i => new KeyValuePair<string, Score>(i.Key.UserInfo.UserId, i.Value)).ToDictionary(),
                 _points[Team.Red], _points[Team.Blue]));
 
             StartRound();
@@ -139,7 +139,10 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
     private void EndMatchAsync()
     {
-        var winningTeam = _points.Max().Key;
+        var winningTeam = Team.Red;
+
+        if (_points[Team.Blue] > _points[Team.Red])
+            winningTeam = Team.Blue;
         
         var mmrChange = _mmrChanges[winningTeam];
         
@@ -191,7 +194,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         _currentRoundVoteManager?.HandlePlayerDisconneced(client);
     }
 
-    private void SendPacketToClients(ServerPacket packet, Team? teamFilter = null, IConnectedClient[]? playerFilter = null)
+    private async Task SendPacketToClients(ServerPacket packet, Team? teamFilter = null, IConnectedClient[]? playerFilter = null)
     {
         var players = _teams.Keys.ToList();
 
@@ -201,11 +204,9 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         if (playerFilter != null)
             players = players.Where(i => !playerFilter.Contains(i)).ToList();
 
-        Console.WriteLine(players.Count);
-
         foreach (var player in players)
         {
-            Task.Run(() => player.SendPacket(packet));
+            await player.SendPacket(packet);
         }
     }
 

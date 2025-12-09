@@ -56,7 +56,7 @@ public class UserData : Database
 
         if (!won)
         {
-            command.CommandText = "UPDATE rankingData SET highestWinstreak = 0 WHERE id = @id LIMIT 1";
+            command.CommandText = "UPDATE rankingData SET bestWinstreak = 0 WHERE id = @id LIMIT 1";
             command.Parameters.AddWithValue("id", userInfo.UserId);
             command.ExecuteNonQuery();
             return;
@@ -68,7 +68,7 @@ public class UserData : Database
         command.ExecuteNonQuery();
 
         command = Connection.CreateCommand();
-        command.CommandText = "UPDATE rannkingData SET winstreak = @newWinstreak WHERE id = @id LIMIT 1";
+        command.CommandText = "UPDATE rankingData SET winstreak = @newWinstreak WHERE id = @id LIMIT 1";
         command.Parameters.AddWithValue("newWinstreak", userInfo.Winstreak + 1);
         command.Parameters.AddWithValue("id", userInfo.UserId);
         command.ExecuteNonQuery();
@@ -77,7 +77,7 @@ public class UserData : Database
             return;
             
         command = Connection.CreateCommand();
-        command.CommandText = "UPDATE rankingData SET highestWinstreak = @newHighestWinstreak WHERE id = @id LIMIT 1";
+        command.CommandText = "UPDATE rankingData SET bestWinstreak = @newHighestWinstreak WHERE id = @id LIMIT 1";
         command.Parameters.AddWithValue("newHighestWinstreak", userInfo.HighestWinstreak + 1);
         command.Parameters.AddWithValue("id", userInfo.UserId);
         command.ExecuteNonQuery();
