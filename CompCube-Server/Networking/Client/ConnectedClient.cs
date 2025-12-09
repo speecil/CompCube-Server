@@ -111,13 +111,15 @@ public class ConnectedClient : IConnectedClient, IDisposable
 
     public async Task SendPacket(ServerPacket packet)
     {
+        Console.WriteLine(packet.PacketType);
+        
         await _client.GetStream().WriteAsync(packet.SerializeToBytes());
         
         // wait a tenth of a second to prevent packets from being sent in the same time frame and being read as
         // one super long packet
         
         // this value may need to be decreased in the future
-        await Task.Delay(100);
+        await Task.Delay(10);
     }
 
     public void Dispose()

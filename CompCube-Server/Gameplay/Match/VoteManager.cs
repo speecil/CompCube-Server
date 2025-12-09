@@ -62,6 +62,9 @@ public class VoteManager
 
     private VotingMap[] GetRandomMapSelection()
     {
+        // debug
+        return _mapData.GetAllMaps().ToArray();
+        
         var maps = new List<VotingMap>();
 
         var allMaps = _mapData.GetAllMaps();

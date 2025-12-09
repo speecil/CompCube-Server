@@ -15,30 +15,21 @@ public class DummyConnectedClient(UserInfo userInfo) : IConnectedClient
 
     public UserInfo UserInfo => userInfo;
 
-    public async Task SendPacket(ServerPacket packet)
+    public Task SendPacket(ServerPacket packet)
     {
-        /*switch (packet.PacketType)
+        switch (packet.PacketType)
         {
-            case ServerPacket.ServerPacketTypes.MatchCreated:
-                await Task.Delay(5000);
+            case ServerPacket.ServerPacketTypes.OpponentVoted:
                 OnUserVoted?.Invoke(new VotePacket(0), this);
                 break;
-            case ServerPacket.ServerPacketTypes.OpponentVoted:
-                break;
-            case ServerPacket.ServerPacketTypes.MatchCreated:
-                var matchStartedPacket = packet as MatchStartedPacket ?? throw new Exception("no way this is a valid thing that can happen lmfao");
-
-                await Task.Delay(20000);
-                
-                OnScoreSubmission?.Invoke(new ScoreSubmissionPacket(90000, 100000, true, 0, true), this);
-                break;
-            case ServerPacket.ServerPacketTypes.MatchResults:
-                break;
-            case ServerPacket.ServerPacketTypes.PrematureMatchEnd:
+            case ServerPacket.ServerPacketTypes.BeginGameTransition:
+                OnScoreSubmission?.Invoke(new ScoreSubmissionPacket(10000, 10000, true, 0, true), this);
                 break;
             default:
-                throw new Exception("Unknown packet type");
-        }*/
+                break;
+        }
+
+        return Task.CompletedTask;
     }
 
     public void Disconnect()

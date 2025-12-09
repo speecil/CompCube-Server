@@ -58,35 +58,29 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         }
     }
 
-    private async void HandlePlayerVoted(VotePacket vote, IConnectedClient client)
+    private void HandlePlayerVoted(VotePacket vote, IConnectedClient client)
     {
-        try
-        {
-            await SendPacketToClients(new PlayerVotedPacket(vote.VoteIndex, client.UserInfo.UserId), null, [client]);
-        }
-        catch (Exception e)
-        {
-            logger.Error(e);
-        }
+        SendPacketToClients(new PlayerVotedPacket(vote.VoteIndex, client.UserInfo.UserId), null, [client]);
     }
 
     public async Task StartMatchAsync()
     {
         _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData, HandleVoteDecided);
-
-        await SendPacketToClients(new MatchCreatedPacket(_teams.Where(i => i.Value == Team.Red).Select(i => i.Key.UserInfo).ToArray(), _teams.Where(i => i.Value == Team.Blue).Select(i => i.Key.UserInfo).ToArray()));
         
-        StartRound();
+        SendPacketToClients(new MatchCreatedPacket(_teams.Where(i => i.Value == Team.Red).Select(i => i.Key.UserInfo).ToArray(), _teams.Where(i => i.Value == Team.Blue).Select(i => i.Key.UserInfo).ToArray()));
+
+        await StartRound();
     }
 
-    private async void StartRound()
+    private async Task StartRound()
     {
         try
         {
             _roundCount++;
             _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData, HandleVoteDecided);
-
-            await SendPacketToClients(new RoundStartedPacket(_currentRoundVoteManager.Options, 30));
+        
+            await Task.Delay(10);
+            SendPacketToClients(new RoundStartedPacket(_currentRoundVoteManager.Options, 30));
         }
         catch (Exception e)
         {
@@ -102,7 +96,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
             await Task.Delay(3000);
 
-            await SendPacketToClients(new BeginGameTransitionPacket(votingMap, 15, 25));
+            SendPacketToClients(new BeginGameTransitionPacket(votingMap, 15, 25));
         }
         catch (Exception e)
         {
@@ -125,11 +119,11 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         
             if (_points.Any(i => i.Value == 2))
             {
-                await EndMatchAsync();
+                EndMatchAsync();
                 return;
             }
             
-            await SendPacketToClients(new RoundResultsPacket(
+            SendPacketToClients(new RoundResultsPacket(
                 scores.Select(i => new KeyValuePair<UserInfo, Score>(i.Key.UserInfo, i.Value)).ToDictionary(),
                 _points[Team.Red], _points[Team.Blue]));
 
@@ -143,7 +137,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
     public void StartMatch() => StartMatchAsync();
 
-    private async Task EndMatchAsync()
+    private void EndMatchAsync()
     {
         var winningTeam = _points.Max().Key;
         
@@ -151,7 +145,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         
         DoForEachClient(i => i.OnDisconnected -= HandleClientDisconnect);
         
-        await SendPacketToClients(new MatchResultsPacket(mmrChange, _points[Team.Red], _points[Team.Blue]));
+        SendPacketToClients(new MatchResultsPacket(mmrChange, _points[Team.Red], _points[Team.Blue]));
         
         DoForEachClient(i => i.Disconnect());
 
@@ -167,9 +161,9 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         messageManager.PostMatchResults(matchResultsData);
     }
 
-    private async Task EndMatchPrematurely(string reason)
+    private void EndMatchPrematurely(string reason)
     {
-        await SendPacketToClients(new PrematureMatchEndPacket(reason));
+        SendPacketToClients(new PrematureMatchEndPacket(reason));
 
         var winningTeam = _points.Max().Key;
         
@@ -182,7 +176,8 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
     {
         client.OnDisconnected -= HandleClientDisconnect;
         
-        userData.SetMmr(client.UserInfo, client.UserInfo.Mmr - 50);
+        if (_matchSettings.Competitive)
+            userData.SetMmr(client.UserInfo, client.UserInfo.Mmr - _matchSettings.MmrPenaltyOnDisconnect);
 
         if (_teams.All(i => i.Value != _teams[client]))
         {
@@ -196,7 +191,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         _currentRoundVoteManager?.HandlePlayerDisconneced(client);
     }
 
-    private async Task SendPacketToClients(ServerPacket packet, Team? teamFilter = null, IConnectedClient[]? playerFilter = null)
+    private void SendPacketToClients(ServerPacket packet, Team? teamFilter = null, IConnectedClient[]? playerFilter = null)
     {
         var players = _teams.Keys.ToList();
 
@@ -206,8 +201,12 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         if (playerFilter != null)
             players = players.Where(i => !playerFilter.Contains(i)).ToList();
 
+        Console.WriteLine(players.Count);
+
         foreach (var player in players)
-            await player.SendPacket(packet);
+        {
+            Task.Run(() => player.SendPacket(packet));
+        }
     }
 
     private void DoForEachClient(Action<IConnectedClient> action)

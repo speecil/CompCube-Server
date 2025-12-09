@@ -39,35 +39,7 @@ public class UserData : Database
         using var reader = command.ExecuteReader();
 
         while (reader.Read())
-        {
-            if (reader.FieldCount == 0) 
-                return null;
-            
-            var mmr = reader.GetInt32(1);
-            var userName = reader.GetString(2);
-            Badge? badge = null;
-            string? discordId = null;
-
-            var rankCommand = Connection.CreateCommand();
-            rankCommand.CommandText = "SELECT COUNT(*) FROM userData WHERE mmr > @mmrThreshold ORDER BY mmr";
-            rankCommand.Parameters.AddWithValue("mmrThreshold", mmr);
-            var rank = (long) (rankCommand.ExecuteScalar() ?? throw new Exception("Could not get user rank!")) + 1;
-
-            if (!reader.IsDBNull(3))
-                badge = GetBadge(reader.GetString(3));
-            
-            if (!reader.IsDBNull(4))
-                discordId = reader.GetString(4);
-
-            var banned = reader.GetBoolean(5);
-
-            var wins = reader.GetInt32(6);
-            var totalGames = reader.GetInt32(7);
-            var winstreak = reader.GetInt32(8);
-            var highestWinstreak = reader.GetInt32(9);
-            
-            return new UserInfo(userName, userId, mmr, DivisionManager.GetDivisionFromMmr(mmr), badge, rank, discordId, banned, wins, totalGames, winstreak, highestWinstreak);
-        }
+            return GetUserInfoFromReader(reader);
         
         return null;
     }
@@ -114,7 +86,7 @@ public class UserData : Database
     public List<UserInfo> GetAllUsers()
     {
         var command = Connection.CreateCommand();
-        command.CommandText = "SELECT id FROM userData JOIN rankingData USING (id) ORDER BY mmr DESC";
+        command.CommandText = "SELECT * FROM userData JOIN rankingData USING (id) ORDER BY mmr DESC";
         
         var userList = new List<UserInfo>();
         
@@ -135,38 +107,38 @@ public class UserData : Database
     {
         if (reader.FieldCount == 0) 
             return null;
-            
-        var userId = reader.GetString(0);
-        var mmr = reader.GetInt32(1);
-        var userName = reader.GetString(2);
+        
+        var userId =  reader.GetString(0);    
+        var mmr = reader.GetInt32(5);
+        var userName = reader.GetString(1);
         Badge? badge = null;
         string? discordId = null;
 
         var rankCommand = Connection.CreateCommand();
-        rankCommand.CommandText = $"SELECT COUNT(*) FROM userData WHERE mmr > @mmrThreshold ORDER BY mmr";
+        rankCommand.CommandText = "SELECT COUNT(*) FROM rankingData WHERE mmr > @mmrThreshold ORDER BY mmr";
         rankCommand.Parameters.AddWithValue("mmrThreshold", mmr);
         var rank = (long) (rankCommand.ExecuteScalar() ?? throw new Exception("Could not get user rank!")) + 1;
 
-        if (!reader.IsDBNull(3))
-            badge = GetBadge(reader.GetString(3));
+        if (!reader.IsDBNull(2))
+            badge = GetBadge(reader.GetString(2));
             
-        if (!reader.IsDBNull(4))
-            discordId = reader.GetString(4);
+        if (!reader.IsDBNull(3))
+            discordId = reader.GetString(3);
 
-        var banned = reader.GetBoolean(5);
+        var banned = reader.GetBoolean(4);
 
         var wins = reader.GetInt32(6);
-        var losses = reader.GetInt32(7);
+        var totalGames = reader.GetInt32(7);
         var winstreak = reader.GetInt32(8);
         var highestWinstreak = reader.GetInt32(9);
             
-        return new UserInfo(userName, userId, mmr, DivisionManager.GetDivisionFromMmr(mmr), badge, rank, discordId, banned, wins, losses, winstreak, highestWinstreak);
+        return new UserInfo(userName, userId, mmr, DivisionManager.GetDivisionFromMmr(mmr), badge, rank, discordId, banned, wins, totalGames, winstreak, highestWinstreak);
     }
 
     public void SetMmr(UserInfo user, int newMmr)
     {
         var command = Connection.CreateCommand();
-        command.CommandText = "UPDATE rankingData SET mmr = @newMmr WHERE userData.id = @id";
+        command.CommandText = "UPDATE rankingData SET mmr = @newMmr WHERE rankingData.id = @id";
         command.Parameters.AddWithValue("newMmr", Math.Max(0, newMmr));
         command.Parameters.AddWithValue("id", user.UserId);
         command.ExecuteNonQuery();
@@ -220,26 +192,16 @@ public class UserData : Database
     
     public UserInfo UpdateUserDataOnLogin(string userId, string userName)
     {
-        var user = GetUserById(userId);
-        if (user != null)
-        {
-            var updateUserNameCommand = Connection.CreateCommand();
-            updateUserNameCommand.CommandText = "UPDATE userData SET username = @userName WHERE userData.id = @userId";
-            updateUserNameCommand.Parameters.AddWithValue("userName", userName);
-            updateUserNameCommand.Parameters.AddWithValue("userId", userId);
-            updateUserNameCommand.ExecuteNonQuery();
-            
-            return GetUserById(userId) ??  throw new Exception("Could not find updated user!");
-        }
-        
         var addToUserDataCommand = Connection.CreateCommand();
-        addToUserDataCommand.CommandText = "INSERT INTO userData VALUES (@userId, @userName, null, null, false)";
-        addToUserDataCommand.Parameters.AddWithValue("userId", userId);
-        addToUserDataCommand.Parameters.AddWithValue("userName", userName);
+        addToUserDataCommand.CommandText = "INSERT OR IGNORE INTO userData VALUES (@userId, @userName, null, null, false)";
+        addToUserDataCommand.Parameters.AddWithValue("@userId", userId);
+        addToUserDataCommand.Parameters.AddWithValue("@userName", userName);
         addToUserDataCommand.ExecuteNonQuery();
         
         var addRankingDataCommand = Connection.CreateCommand();
-        addRankingDataCommand.CommandText = "INSERT INTO rankingData VALUES (@userId, 1000)";
+        addRankingDataCommand.CommandText = "INSERT OR IGNORE INTO rankingData VALUES (@userId, 1000, 0, 0, 0, 0)";
+        addRankingDataCommand.Parameters.AddWithValue("@userId", userId);
+        addRankingDataCommand.ExecuteNonQuery();
 
         return GetUserById(userId) ?? throw new Exception("Could not find updated user!");
     }
