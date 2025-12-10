@@ -18,13 +18,8 @@ namespace CompCube_Server;
 
 public class Program
 {
-    public static bool Debug { get; private set; } = false;
-        
     public static void Main(string[] args)
     {
-        if (args.Contains("--debug"))
-            Debug = true;
-            
         var builder = WebApplication.CreateBuilder(args);
         
         InstallBindings(builder.Services);
