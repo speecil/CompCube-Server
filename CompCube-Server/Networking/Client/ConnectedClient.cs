@@ -4,7 +4,6 @@ using CompCube_Models.Models.ClientData;
 using CompCube_Models.Models.Packets;
 using CompCube_Models.Models.Packets.UserPackets;
 using CompCube_Server.Interfaces;
-using CompCube_Server.Logging;
 
 namespace CompCube_Server.Networking.Client;
 

@@ -119,6 +119,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         
             if (_points.Any(i => i.Value == 2))
             {
+                logger.Info("here");
                 EndMatchAsync();
                 return;
             }
@@ -191,7 +192,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         _teams.Remove(client);
         
         _currentRoundScoreManager?.HandlePlayerDisconneced(client);
-        _currentRoundVoteManager?.HandlePlayerDisconneced(client);
+        _currentRoundVoteManager?.HandlePlayerDisconnected(client);
     }
 
     private async Task SendPacketToClients(ServerPacket packet, Team? teamFilter = null, IConnectedClient[]? playerFilter = null)

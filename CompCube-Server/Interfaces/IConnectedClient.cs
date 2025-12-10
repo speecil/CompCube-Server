@@ -1,4 +1,5 @@
-﻿using CompCube_Models.Models.ClientData;
+﻿using System.Runtime.CompilerServices;
+using CompCube_Models.Models.ClientData;
 using CompCube_Models.Models.Packets;
 using CompCube_Models.Models.Packets.UserPackets;
 

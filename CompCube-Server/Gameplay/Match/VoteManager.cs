@@ -36,7 +36,7 @@ public class VoteManager
         DecideVoteIfAllowed();
     }
 
-    public void HandlePlayerDisconneced(IConnectedClient player)
+    public void HandlePlayerDisconnected(IConnectedClient player)
     {
         _playerVotes.Remove(player);
 
