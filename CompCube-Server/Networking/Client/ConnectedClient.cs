@@ -119,7 +119,7 @@ public class ConnectedClient : IConnectedClient, IDisposable
         // one super long packet
         
         // this value may need to be decreased in the future
-        await Task.Delay(10);
+        await Task.Delay(50);
     }
 
     public void Dispose()

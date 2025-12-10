@@ -5,7 +5,7 @@ using CompCube_Server.SQL;
 
 namespace CompCube_Server.Gameplay.Match;
 
-public class VoteManager
+public class VoteManager : IDisposable
 {
     private readonly Random _random = new();
     private readonly MapData _mapData;
@@ -60,9 +60,6 @@ public class VoteManager
 
     private VotingMap[] GetRandomMapSelection()
     {
-        // debug
-        return _mapData.GetAllMaps().ToArray();
-        
         var maps = new List<VotingMap>();
 
         var allMaps = _mapData.GetAllMaps();
@@ -79,4 +76,6 @@ public class VoteManager
 
         return maps.ToArray();
     }
+
+    public void Dispose() => _playerVotes.Keys.ToList().ForEach(i => i.OnUserVoted -= HandlePlayerVote);
 }

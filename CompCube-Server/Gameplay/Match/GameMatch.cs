@@ -92,6 +92,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
     {
         try
         {
+            _currentRoundScoreManager?.Dispose();
             _currentRoundScoreManager = new ScoreManager(_teams, HandleResults);
 
             await Task.Delay(3000);
@@ -108,6 +109,8 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
     {
         try
         {
+            Console.WriteLine("handling results");
+            
             var redPoints = scores.Where(i => _teams[i.Key] == Team.Red).Sum(i => i.Value.Points);
             var bluePoints = scores.Where(i => _teams[i.Key] == Team.Blue).Sum(i => i.Value.Points);
 
