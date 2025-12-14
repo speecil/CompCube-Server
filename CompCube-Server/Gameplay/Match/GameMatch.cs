@@ -77,6 +77,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         try
         {
             _roundCount++;
+            _currentRoundVoteManager?.Dispose();
             _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData, HandleVoteDecided);
         
             await Task.Delay(10);
@@ -109,8 +110,6 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
     {
         try
         {
-            Console.WriteLine("handling results");
-            
             var redPoints = scores.Where(i => _teams[i.Key] == Team.Red).Sum(i => i.Value.Points);
             var bluePoints = scores.Where(i => _teams[i.Key] == Team.Blue).Sum(i => i.Value.Points);
 
