@@ -68,7 +68,7 @@ public class VoteManager : IDisposable
         {
             var map = allMaps[_random.Next(0, allMaps.Count)];
 
-            if (maps.Any(i => i.Hash == map.Hash || i.Category == map.Category))
+            if (maps.Any(i => i.Hash == map.Hash || i.MapCategory == map.MapCategory))
                 continue;
             
             maps.Add(map);

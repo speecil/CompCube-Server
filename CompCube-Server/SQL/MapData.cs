@@ -12,6 +12,7 @@ public class MapData(Logger logger) : Database
                                       "hash TEXT NOT NULL, " + 
                                       "difficulty TEXT NOT NULL, " + 
                                       "category TEXT NOT NULL " +
+                                      "categoryLabel TEXT NOT NULL" + 
                                       ");";
         createDbCommand.ExecuteNonQuery();
     }
@@ -19,10 +20,11 @@ public class MapData(Logger logger) : Database
     public void AddMap(VotingMap votingMap)
     {
         var command = Connection.CreateCommand();
-        command.CommandText = "INSERT INTO mapData VALUES (@hash, @difficulty, @category)";
+        command.CommandText = "INSERT INTO mapData VALUES (@hash, @difficulty, @category, @categoryLabel)";
         command.Parameters.AddWithValue("hash", votingMap.Hash);
         command.Parameters.AddWithValue("difficulty", votingMap.Difficulty.ToString());
-        command.Parameters.AddWithValue("category", votingMap.Category);
+        command.Parameters.AddWithValue("category", votingMap.MapCategory.ToString());
+        command.Parameters.AddWithValue("categoryLabel", votingMap.CategoryLabel);
 
         command.ExecuteNonQuery();
     }
@@ -46,10 +48,18 @@ public class MapData(Logger logger) : Database
                 logger.Error($"Could not parse difficulty type for hash {hash}: {reader.GetString(1)}");
                 continue;
             }
-
-            var category = reader.GetString(2);
             
-            maps.Add(new VotingMap(hash, difficulty, category));
+            var categoryString = reader.GetString(2);
+
+            if (!Enum.TryParse<VotingMap.Category>(categoryString, out var category))
+            {
+                logger.Error($"Could not parse category for hash {hash}: {categoryString}");
+                continue;
+            }
+
+            var categoryLabel = reader.GetString(3);
+            
+            maps.Add(new VotingMap(hash, difficulty, category, categoryLabel));
         }
         
         return maps;
