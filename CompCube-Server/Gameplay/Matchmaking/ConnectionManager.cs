@@ -78,12 +78,12 @@ public class ConnectionManager : IDisposable
                     
                     if (targetMatchmaker == null)
                     {
-                        await connectedClient.SendPacket(new JoinResponsePacket(false, "Invalid Queue"));
+                        connectedClient.SendPacket(new JoinResponsePacket(false, "Invalid Queue"));
                         connectedClient.Disconnect();
                         continue;
                     }
                     
-                    await connectedClient.SendPacket(new JoinResponsePacket(true, "success"));
+                    connectedClient.SendPacket(new JoinResponsePacket(true, "success"));
                     
                     targetMatchmaker.AddClientToPool(connectedClient);
                     
