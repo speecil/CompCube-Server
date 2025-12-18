@@ -69,6 +69,7 @@ public class Program
         
         services.AddSingleton<IQueue, DebugQueue>();
         services.AddSingleton<IQueue, StandardCasualQueue>();
+        services.AddSingleton<StandardCompetitiveQueue>();
 
         services.AddSingleton<BeatSaverApiWrapper>();
 
