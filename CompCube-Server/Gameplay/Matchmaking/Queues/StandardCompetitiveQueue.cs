@@ -34,7 +34,7 @@ public class StandardCompetitiveQueue : StandardQueue
 
     private void CreateMatchesWhereAvailable()
     {
-        // create shallow copy
+        // create copy
         var clientsToCheck = _clientPool.ToArray();
         
         foreach (var client in clientsToCheck)
