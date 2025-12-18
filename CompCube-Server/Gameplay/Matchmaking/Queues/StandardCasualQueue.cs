@@ -25,6 +25,9 @@ public class StandardCasualQueue(GameMatchFactory gameMatchFactory) : StandardQu
         var playerTwo = _clientPool[1];
 
         var match = gameMatchFactory.CreateNewMatch([playerOne.Client], [playerTwo.Client], new MatchSettings(true, false, 0, 0));
-        match.StartMatch();
+        Task.Run(() =>
+        {
+            match.StartMatch();
+        });
     }
 }

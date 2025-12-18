@@ -44,13 +44,13 @@ public class ConnectionManager : IDisposable
         _logger.Info("Started listening for clients");
     }
 
-    private async void ListenForClients()
+    private void ListenForClients()
     {
         try
         {
             while (_isStarted)
             {
-                var client = await _listener.AcceptTcpClientAsync();
+                var client = _listener.AcceptTcpClient();
                 
                 try
                 {
@@ -67,7 +67,7 @@ public class ConnectionManager : IDisposable
 
                     if (_connectedClients.Any(i => i.UserInfo.UserId == packet.UserId))
                     {
-                        await client.GetStream().WriteAsync(new JoinResponsePacket(false, "You are logged in from another location!").SerializeToBytes());
+                        client.GetStream().WriteAsync(new JoinResponsePacket(false, "You are logged in from another location!").SerializeToBytes());
                         client.Close();
                         return;
                     }

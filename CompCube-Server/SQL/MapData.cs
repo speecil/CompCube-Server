@@ -11,7 +11,7 @@ public class MapData(Logger logger) : Database
         createDbCommand.CommandText = "CREATE TABLE IF NOT EXISTS mapData ( " + 
                                       "hash TEXT NOT NULL, " + 
                                       "difficulty TEXT NOT NULL, " + 
-                                      "category TEXT NOT NULL " +
+                                      "category TEXT NOT NULL, " +
                                       "categoryLabel TEXT NOT NULL" + 
                                       ");";
         createDbCommand.ExecuteNonQuery();
