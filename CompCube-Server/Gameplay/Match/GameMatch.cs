@@ -121,8 +121,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         
             if (_points.Any(i => i.Value == 2))
             {
-                logger.Info("here");
-                EndMatchAsync();
+                await EndMatchAsync();
                 return;
             }
             
@@ -140,7 +139,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
     public void StartMatch() => StartMatchAsync();
 
-    private void EndMatchAsync()
+    private async Task EndMatchAsync()
     {
         var winningTeam = Team.Red;
 
@@ -151,7 +150,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         
         DoForEachClient(i => i.OnDisconnected -= HandleClientDisconnect);
         
-        SendPacketToClients(new MatchResultsPacket(mmrChange, _points[Team.Red], _points[Team.Blue]));
+        await SendPacketToClients(new MatchResultsPacket(mmrChange, _points[Team.Red], _points[Team.Blue]));
         
         DoForEachClient(i => i.Disconnect());
 
