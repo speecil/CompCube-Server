@@ -121,12 +121,11 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         
             if (_points.Any(i => i.Value == 2))
             {
-                logger.Info("here");
-                EndMatchAsync();
+                await EndMatchAsync();
                 return;
             }
             
-            await SendPacketToClients(new RoundResultsPacket(
+            await SendPacketToClientsAsync(new RoundResultsPacket(
                 scores.Select(i => new KeyValuePair<string, Score>(i.Key.UserInfo.UserId, i.Value)).ToDictionary(),
                 _points[Team.Red], _points[Team.Blue]));
 
@@ -140,7 +139,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
     public void StartMatch() => StartMatchAsync();
 
-    private void EndMatchAsync()
+    private async Task EndMatchAsync()
     {
         var winningTeam = Team.Red;
 
@@ -151,7 +150,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         
         DoForEachClient(i => i.OnDisconnected -= HandleClientDisconnect);
         
-        SendPacketToClients(new MatchResultsPacket(mmrChange, _points[Team.Red], _points[Team.Blue]));
+        await SendPacketToClientsAsync(new MatchResultsPacket(mmrChange, _points[Team.Red], _points[Team.Blue]));
         
         DoForEachClient(i => i.Disconnect());
 
@@ -196,8 +195,10 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         _currentRoundScoreManager?.HandlePlayerDisconneced(client);
         _currentRoundVoteManager?.HandlePlayerDisconnected(client);
     }
+    
+    private void SendPacketToClients(ServerPacket packet, Team? teamFilter = null, IConnectedClient[]? playerFilter = null) => SendPacketToClientsAsync(packet, teamFilter, playerFilter);
 
-    private async Task SendPacketToClients(ServerPacket packet, Team? teamFilter = null, IConnectedClient[]? playerFilter = null)
+    private async Task SendPacketToClientsAsync(ServerPacket packet, Team? teamFilter = null, IConnectedClient[]? playerFilter = null)
     {
         var players = _teams.Keys.ToList();
 
