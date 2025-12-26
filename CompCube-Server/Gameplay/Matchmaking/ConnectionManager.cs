@@ -34,8 +34,35 @@ public class ConnectionManager : IDisposable
     {
         _listener.Start();
         Task.Factory.StartNew(ListenForClients, TaskCreationOptions.LongRunning);
+        Task.Factory.StartNew(PollAllClients, TaskCreationOptions.LongRunning);
         
         _logger.Info("Started listening for clients");
+    }
+
+    private async Task PollAllClients()
+    {
+        while (true)
+        {
+            await Task.Delay(5000);
+            
+            var clientsToPoll = _connectedClients.ToArray();
+
+            foreach (var client in clientsToPoll)
+            {
+                try
+                {
+                    if (client.IsConnectionAlive)
+                        continue;
+                    client.Disconnect();
+                }
+                catch (Exception e)
+                {
+                    _logger.Error($"Client {client.UserInfo.UserId} could not be polled for disconnection! {e}");
+                }
+            }
+            
+            // _logger.Info("polled!");
+        }
     }
 
     private async Task ListenForClients()
@@ -64,7 +91,7 @@ public class ConnectionManager : IDisposable
                         .WriteAsync(new JoinResponsePacket(false, "You are logged in from another location!")
                             .SerializeToBytes());
                     client.Close();
-                    return;
+                    continue;
                 }
 
                 var connectedClient = new ConnectedClient(client,

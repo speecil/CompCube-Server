@@ -13,6 +13,8 @@ public interface IConnectedClient
     
     public event Action<IConnectedClient>? OnDisconnected;
 
+    public bool IsConnectionAlive { get; }
+
     public UserInfo UserInfo { get; }
 
     public Task SendPacket(ServerPacket packet);

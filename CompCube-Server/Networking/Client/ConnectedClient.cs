@@ -82,7 +82,7 @@ public class ConnectedClient : IConnectedClient, IDisposable
         OnDisconnected?.Invoke(this);
     }
 
-    private bool IsConnectionAlive
+    public bool IsConnectionAlive
     {
         get
         {
