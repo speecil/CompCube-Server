@@ -88,7 +88,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
             _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData, HandleVoteDecided);
         
             // await Task.Delay(10);
-            await SendPacketToClientsAsync(new RoundStartedPacket(_currentRoundVoteManager.Options, 30));
+            await SendPacketToClientsAsync(new RoundStartedPacket(_currentRoundVoteManager.Options, 30, _roundCount));
         }
         catch (Exception e)
         {

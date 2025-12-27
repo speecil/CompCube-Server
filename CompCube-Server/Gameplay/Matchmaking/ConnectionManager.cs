@@ -54,6 +54,7 @@ public class ConnectionManager : IDisposable
                     if (client.IsConnectionAlive)
                         continue;
                     client.Disconnect();
+                    _logger.Info($"disconnected {client.UserInfo.Username} via polling");
                 }
                 catch (Exception e)
                 {
@@ -61,7 +62,7 @@ public class ConnectionManager : IDisposable
                 }
             }
             
-            // _logger.Info("polled!");
+            // _logger.Info($"polled {clientsToPoll.Length} clients");
         }
     }
 
