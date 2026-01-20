@@ -4,11 +4,14 @@ using CompCube_Models.Models.ClientData;
 using CompCube_Models.Models.Packets;
 using CompCube_Models.Models.Packets.UserPackets;
 using CompCube_Server.Interfaces;
+using CompCube_Server.Logging;
 
 namespace CompCube_Server.Networking.Client;
 
 public class ConnectedClient : IConnectedClient, IDisposable
 {
+    private readonly Logger _logger;
+    
     private readonly TcpClient _client;
 
     private bool _listenToClient = true;
@@ -19,20 +22,20 @@ public class ConnectedClient : IConnectedClient, IDisposable
 
     public UserInfo UserInfo { get; }
 
-    public ConnectedClient(TcpClient client, UserInfo userInfo)
+    public ConnectedClient(TcpClient client, UserInfo userInfo, Logger logger)
     {
         _client = client;
         UserInfo = userInfo;
-        
-        var listenerThread = new Thread(ListenToClient);
-        listenerThread.Start();
+        _logger = logger;
+
+        Task.Factory.StartNew(ListenToClient, TaskCreationOptions.LongRunning);
     }
 
-    private void ListenToClient()
+    private async Task ListenToClient()
     {
-        try
+        while (_listenToClient)
         {
-            while (_listenToClient)
+            try
             {
                 if (!IsConnectionAlive)
                 {
@@ -44,28 +47,31 @@ public class ConnectedClient : IConnectedClient, IDisposable
 
                 if (IsConnectionAlive)
                     _client.GetStream().Flush();
-
+                
                 if (!_client.GetStream().DataAvailable)
                     continue;
-
+                
                 var bytesRead = _client.GetStream().Read(buffer, 0, buffer.Length);
                 Array.Resize(ref buffer, bytesRead);
-
+                
                 var json = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
+
+                if (json.Length == 0)
+                    continue;
 
                 var packet = UserPacket.Deserialize(json);
 
                 ProcessRecievedPacket(packet);
             }
-        }
-        catch (ObjectDisposedException e)
-        {
-            _listenToClient = false;
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            Disconnect();
+            catch (ObjectDisposedException)
+            {
+                return;
+            }
+            catch (Exception e)
+            {
+                Disconnect();
+                _logger.Error(e);
+            }
         }
     }
 
@@ -77,7 +83,7 @@ public class ConnectedClient : IConnectedClient, IDisposable
         OnDisconnected?.Invoke(this);
     }
 
-    private bool IsConnectionAlive
+    public bool IsConnectionAlive
     {
         get
         {

@@ -18,10 +18,6 @@ public class ConnectionManager : IDisposable
     private readonly QueueManager _queueManager;
     
     private readonly TcpListener _listener = new(IPAddress.Any, 8008);
-
-    private readonly Thread _listenForClientsThread;
-    
-    private bool _isStarted = false;
     
     private readonly List<IConnectedClient> _connectedClients = [];
     
@@ -31,78 +27,100 @@ public class ConnectionManager : IDisposable
         _logger = logger;
         _queueManager = queueManager;
         
-        _listenForClientsThread = new Thread(ListenForClients);
         Start();
     }
 
     public void Start()
     {
         _listener.Start();
-        _isStarted = true;
+        Task.Factory.StartNew(ListenForClients, TaskCreationOptions.LongRunning);
+        Task.Factory.StartNew(PollAllClients, TaskCreationOptions.LongRunning);
         
-        _listenForClientsThread.Start();
         _logger.Info("Started listening for clients");
     }
 
-    private async void ListenForClients()
+    private async Task PollAllClients()
     {
-        try
+        while (true)
         {
-            while (_isStarted)
+            await Task.Delay(5000);
+            
+            var clientsToPoll = _connectedClients.ToArray();
+
+            foreach (var client in clientsToPoll)
             {
-                var client = await _listener.AcceptTcpClientAsync();
-                _logger.Info($"Accepted client {client.Client.RemoteEndPoint}");
-                
                 try
                 {
-                    var buffer = new byte[1024];
-
-                    var streamLength = client.GetStream().Read(buffer, 0, buffer.Length);
-                    buffer = buffer[..streamLength];
-
-                    var json = Encoding.UTF8.GetString(buffer);
-                    
-                    _logger.Info(json);
-
-                    var packet = UserPacket.Deserialize(json) as JoinRequestPacket ?? throw new Exception("Could not deserialize packet!");
-
-                    if (_connectedClients.Any(i => i.UserInfo.UserId == packet.UserId))
-                    {
-                        client.GetStream().Write(new JoinResponsePacket(false, "You are logged in from another location!").SerializeToBytes());
-                        client.Close();
-                        return;
-                    }
-                    
-                    var connectedClient = new ConnectedClient(client, _userData.UpdateUserDataOnLogin(packet.UserId, packet.UserName));
-                    
-                    var targetMatchmaker = _queueManager.GetQueueFromName(packet.Queue);
-                    
-                    if (targetMatchmaker == null)
-                    {
-                        await connectedClient.SendPacket(new JoinResponsePacket(false, "Invalid Queue"));
-                        connectedClient.Disconnect();
+                    if (client.IsConnectionAlive)
                         continue;
-                    }
-                    
-                    await connectedClient.SendPacket(new JoinResponsePacket(true, "success"));
-                    
-                    targetMatchmaker.AddClientToPool(connectedClient);
-                    
-                    _connectedClients.Add(connectedClient);
-                    connectedClient.OnDisconnected += OnDisconnected;
-                  
-                    _logger.Info($"User {connectedClient.UserInfo.Username} ({connectedClient.UserInfo.UserId}) joined queue {targetMatchmaker.QueueName}");
+                    client.Disconnect();
+                    _logger.Info($"disconnected {client.UserInfo.Username} via polling");
                 }
                 catch (Exception e)
                 {
-                    _logger.Error(e);
-                    client.Close();
+                    _logger.Error($"Client {client.UserInfo.UserId} could not be polled for disconnection! {e}");
                 }
             }
+            
+            // _logger.Info($"polled {clientsToPoll.Length} clients");
         }
-        catch (Exception e)
+    }
+
+    private async Task ListenForClients()
+    {
+        while (true)
         {
-            _logger.Error(e);
+            var client = await _listener.AcceptTcpClientAsync();
+
+            try
+            {
+                var buffer = new byte[1024];
+
+                var streamLength = client.GetStream().Read(buffer, 0, buffer.Length);
+                buffer = buffer[..streamLength];
+
+                var json = Encoding.UTF8.GetString(buffer);
+
+                _logger.Info(json);
+
+                var packet = UserPacket.Deserialize(json) as JoinRequestPacket ??
+                             throw new Exception("Could not deserialize packet!");
+
+                if (_connectedClients.Any(i => i.UserInfo.UserId == packet.UserId))
+                {
+                    await client.GetStream()
+                        .WriteAsync(new JoinResponsePacket(false, "You are logged in from another location!")
+                            .SerializeToBytes());
+                    client.Close();
+                    continue;
+                }
+
+                var connectedClient = new ConnectedClient(client,
+                    _userData.UpdateUserDataOnLogin(packet.UserId, packet.UserName), _logger);
+
+                var targetMatchmaker = _queueManager.GetQueueFromName(packet.Queue);
+
+                if (targetMatchmaker == null)
+                {
+                    await connectedClient.SendPacket(new JoinResponsePacket(false, "Invalid Queue"));
+                    connectedClient.Disconnect();
+                    continue;
+                }
+
+                await connectedClient.SendPacket(new JoinResponsePacket(true, "success"));
+
+                targetMatchmaker.AddClientToPool(connectedClient);
+
+                _connectedClients.Add(connectedClient);
+                connectedClient.OnDisconnected += OnDisconnected;
+
+                _logger.Info($"User {connectedClient.UserInfo.Username} ({connectedClient.UserInfo.UserId}) joined queue {targetMatchmaker.QueueName}");
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e);
+                client.Close();
+            }
         }
     }
 
@@ -116,7 +134,6 @@ public class ConnectionManager : IDisposable
 
     private void Stop()
     {
-        _isStarted = false;
         _listener.Stop();
     }
 

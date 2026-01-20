@@ -12,6 +12,7 @@ public class DummyConnectedClient(UserInfo userInfo) : IConnectedClient
     public event Action<ScoreSubmissionPacket, IConnectedClient>? OnScoreSubmission;
     public event Action<IConnectedClient>? OnDisconnected;
 
+    public bool IsConnectionAlive => true;
     public UserInfo UserInfo => userInfo;
 
     public Task SendPacket(ServerPacket packet)
