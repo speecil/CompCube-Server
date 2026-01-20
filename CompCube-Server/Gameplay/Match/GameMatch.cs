@@ -29,6 +29,11 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
     private readonly Dictionary<Team, int> _mmrChanges = new();
 
     private readonly int _id = matchLog.GetValidMatchId();
+
+    private const int SendWinningVoteToClientDelayInMilliseconds = 3000;
+    private const int VotingTimeInSeconds = 30;
+    private const int TransitionToGameTimeInSeconds = 15;
+    private const int UnpauseTimeInSeconds = 10;
     
     public void Init(IConnectedClient[] red, IConnectedClient[] blue, MatchSettings settings)
     {
@@ -88,7 +93,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
             _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData, HandleVoteDecided);
         
             // await Task.Delay(10);
-            await SendPacketToClientsAsync(new RoundStartedPacket(_currentRoundVoteManager.Options, 30, _roundCount));
+            await SendPacketToClientsAsync(new RoundStartedPacket(_currentRoundVoteManager.Options, VotingTimeInSeconds, _roundCount));
         }
         catch (Exception e)
         {
@@ -103,9 +108,9 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
             _currentRoundScoreManager?.Dispose();
             _currentRoundScoreManager = new ScoreManager(_teams, HandleResults);
 
-            await Task.Delay(3000);
+            await Task.Delay(SendWinningVoteToClientDelayInMilliseconds);
 
-            await SendPacketToClientsAsync(new BeginGameTransitionPacket(votingMap, 15, 10));
+            await SendPacketToClientsAsync(new BeginGameTransitionPacket(votingMap, TransitionToGameTimeInSeconds, UnpauseTimeInSeconds));
         }
         catch (Exception e)
         {
@@ -177,7 +182,13 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
         var winningTeam = _points.Max().Key;
         
-        var matchResults = new MatchResultsData(_initialPlayers.Where(i => i.Value == winningTeam).Select(i => i.Key).ToArray(), _initialPlayers.Where(i => i.Value != winningTeam).Select(i => i.Key).ToArray(), _mmrChanges[winningTeam], true, _id, DateTime.Now);
+        var matchResults = new MatchResultsData(
+            _initialPlayers.Where(i => i.Value == winningTeam).Select(i => i.Key).ToArray(), 
+            _initialPlayers.Where(i => i.Value != winningTeam).Select(i => i.Key).ToArray(), 
+            _mmrChanges[winningTeam], 
+            true, 
+            _id, 
+            DateTime.Now);
         
         matchLog.AddMatchToTable(matchResults);
     }
