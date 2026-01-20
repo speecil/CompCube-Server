@@ -27,7 +27,7 @@ public class ConnectionManager : IDisposable
         _logger = logger;
         _queueManager = queueManager;
         
-        var port = config.GetSection("Server").GetValue("TcpListenerPort", -1);
+        var port = config.GetSection("Server").GetValue("TcpListeningPort", -1);
 
         if (port == -1)
         {
