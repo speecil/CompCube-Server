@@ -11,7 +11,7 @@ using CompCube_Server.SQL;
 
 namespace CompCube_Server.Gameplay.Match;
 
-public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchLog matchLog, MatchMessageManager messageManager)
+public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchLog matchLog, MatchMessageManager messageManager) : IDisposable
 {
     private MatchSettings _matchSettings;
 
@@ -148,11 +148,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         
         var mmrChange = _mmrChanges[winningTeam];
         
-        DoForEachClient(i => i.OnDisconnected -= HandleClientDisconnect);
-        
         await SendPacketToClientsAsync(new MatchResultsPacket(mmrChange, _points[Team.Red], _points[Team.Blue]));
-        
-        DoForEachClient(i => i.Disconnect());
 
         var winningPlayers = _initialPlayers.Where(i => i.Value == winningTeam)
             .Select(i => i.Key).ToArray();
@@ -164,6 +160,8 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         matchLog.AddMatchToTable(matchResultsData);
         
         messageManager.PostMatchResults(matchResultsData);
+        
+        Dispose();
     }
 
     private void EndMatchPrematurely(string reason)
@@ -239,5 +237,19 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
     {
         Red,
         Blue
+    }
+
+    public void Dispose()
+    {
+        _currentRoundScoreManager?.Dispose();
+        _currentRoundVoteManager?.Dispose();
+        
+        DoForEachClient(i =>
+        {
+            i.OnUserVoted -= HandlePlayerVoted;
+            i.OnDisconnected -= HandleClientDisconnect;
+            
+            i.Disconnect();
+        });
     }
 }

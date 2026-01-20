@@ -44,13 +44,14 @@ public class ConnectionManager : IDisposable
         _logger.Info("Started listening for clients");
     }
 
-    private void ListenForClients()
+    private async void ListenForClients()
     {
         try
         {
             while (_isStarted)
             {
-                var client = _listener.AcceptTcpClient();
+                var client = await _listener.AcceptTcpClientAsync();
+                _logger.Info($"Accepted client {client.Client.RemoteEndPoint}");
                 
                 try
                 {
@@ -67,7 +68,7 @@ public class ConnectionManager : IDisposable
 
                     if (_connectedClients.Any(i => i.UserInfo.UserId == packet.UserId))
                     {
-                        client.GetStream().WriteAsync(new JoinResponsePacket(false, "You are logged in from another location!").SerializeToBytes());
+                        client.GetStream().Write(new JoinResponsePacket(false, "You are logged in from another location!").SerializeToBytes());
                         client.Close();
                         return;
                     }
@@ -78,12 +79,12 @@ public class ConnectionManager : IDisposable
                     
                     if (targetMatchmaker == null)
                     {
-                        connectedClient.SendPacket(new JoinResponsePacket(false, "Invalid Queue"));
+                        await connectedClient.SendPacket(new JoinResponsePacket(false, "Invalid Queue"));
                         connectedClient.Disconnect();
                         continue;
                     }
                     
-                    connectedClient.SendPacket(new JoinResponsePacket(true, "success"));
+                    await connectedClient.SendPacket(new JoinResponsePacket(true, "success"));
                     
                     targetMatchmaker.AddClientToPool(connectedClient);
                     

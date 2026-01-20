@@ -39,24 +39,28 @@ public class ConnectedClient : IConnectedClient, IDisposable
                     Disconnect();
                     return;
                 }
-                
+
                 var buffer = new byte[1024];
 
                 if (IsConnectionAlive)
                     _client.GetStream().Flush();
-                
+
                 if (!_client.GetStream().DataAvailable)
                     continue;
-                
+
                 var bytesRead = _client.GetStream().Read(buffer, 0, buffer.Length);
                 Array.Resize(ref buffer, bytesRead);
-                
+
                 var json = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
-                
+
                 var packet = UserPacket.Deserialize(json);
 
                 ProcessRecievedPacket(packet);
             }
+        }
+        catch (ObjectDisposedException e)
+        {
+            _listenToClient = false;
         }
         catch (Exception e)
         {
