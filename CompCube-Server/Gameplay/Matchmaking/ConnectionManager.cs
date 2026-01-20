@@ -16,16 +16,26 @@ public class ConnectionManager : IDisposable
     private readonly UserData _userData;
     private readonly Logger _logger;
     private readonly QueueManager _queueManager;
-    
-    private readonly TcpListener _listener = new(IPAddress.Any, 8008);
+
+    private readonly TcpListener _listener;
     
     private readonly List<IConnectedClient> _connectedClients = [];
     
-    public ConnectionManager(UserData userData, Logger logger, QueueManager queueManager)
+    public ConnectionManager(UserData userData, Logger logger, QueueManager queueManager, IConfiguration config)
     {
         _userData = userData;
         _logger = logger;
         _queueManager = queueManager;
+        
+        var port = config.GetSection("Server").GetValue("TcpListenerPort", -1);
+
+        if (port == -1)
+        {
+            logger.Info("No server port configured! Defaulting to 8008.");
+            port = 8008;
+        }
+        
+        _listener = new(IPAddress.Any, port);
         
         Start();
     }

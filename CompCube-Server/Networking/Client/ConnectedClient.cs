@@ -123,7 +123,7 @@ public class ConnectedClient : IConnectedClient, IDisposable
     {
         await _client.GetStream().WriteAsync(packet.SerializeToBytes());
         
-        // wait a tenth of a second to prevent packets from being sent in the same time frame and being read as
+        // wait a 20th of a second to prevent packets from being sent in the same time frame and being read as
         // one super long packet
         
         // this value may need to be decreased in the future
