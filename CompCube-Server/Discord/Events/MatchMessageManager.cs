@@ -8,10 +8,28 @@ using NetCord.Rest;
 
 namespace CompCube_Server.Discord.Events;
 
-public class MatchMessageManager(MatchInfoMessageFormatter messageFormatter, Logger logger, GatewayClient gatewayClient)
+public class MatchMessageManager
 {
-    private readonly TextChannel? _matchChannel = gatewayClient.Rest.GetChannelAsync(1400279911008174282).Result as TextChannel;
-    
+    private readonly TextChannel? _matchChannel;
+    private readonly MatchInfoMessageFormatter _messageFormatter;
+    private readonly Logger _logger;
+
+    public MatchMessageManager(MatchInfoMessageFormatter messageFormatter, Logger logger, GatewayClient gatewayClient, IConfiguration config)
+    {
+        _messageFormatter = messageFormatter;
+        _logger = logger;
+        
+        var channelId = config.GetSection("Discord").GetValue<ulong>("MatchLoggingChannelId", 0);
+
+        if (channelId == 0)
+        {
+            _matchChannel = null;
+            return;
+        }
+        
+        _matchChannel = gatewayClient.Rest.GetChannelAsync(channelId).Result as TextChannel;
+    }
+
     public async void PostMatchResults(MatchResultsData results)
     {
         try
@@ -22,7 +40,7 @@ public class MatchMessageManager(MatchInfoMessageFormatter messageFormatter, Log
             if (_matchChannel == null) 
                 return;
 
-            var embed = messageFormatter.GetEmbed(results, "Match results:", false);
+            var embed = _messageFormatter.GetEmbed(results, "Match results:", false);
 
             await _matchChannel.SendMessageAsync(new MessageProperties()
             {
@@ -31,7 +49,7 @@ public class MatchMessageManager(MatchInfoMessageFormatter messageFormatter, Log
         }
         catch (Exception e)
         {
-            logger.Error(e);
+            _logger.Error(e);
         }
     }
 }
