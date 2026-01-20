@@ -168,10 +168,12 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
             .Select(i => i.Key).ToArray();
         
         var matchResultsData = new MatchResultsData(winningPlayers, losingPlayers, mmrChange, false, _id, DateTime.Now);
-        
-        matchLog.AddMatchToTable(matchResultsData);
-        
-        messageManager.PostMatchResults(matchResultsData);
+
+        if (_matchSettings.LogMatch)
+        {
+            matchLog.AddMatchToTable(matchResultsData);
+            messageManager.PostMatchResults(matchResultsData);
+        }
         
         Dispose();
     }
@@ -190,7 +192,8 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
             _id, 
             DateTime.Now);
         
-        matchLog.AddMatchToTable(matchResults);
+        if (_matchSettings.LogMatch)
+            matchLog.AddMatchToTable(matchResults);
     }
 
     private async void HandleClientDisconnect(IConnectedClient client)
