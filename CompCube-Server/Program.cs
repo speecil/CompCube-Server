@@ -25,7 +25,11 @@ public class Program
         
         InstallBindings(builder.Services);
         
-        builder.Services.AddDiscordGateway().AddApplicationCommands();
+        builder.Services.AddDiscordGateway((options, service) =>
+        {
+            IConfiguration configuration = service.GetRequiredService<IConfiguration>();
+            options.Token = configuration.GetSection("Discord").GetValue<string>("Token");
+        }).AddApplicationCommands();
 
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();

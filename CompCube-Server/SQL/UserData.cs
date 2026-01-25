@@ -172,12 +172,17 @@ public class UserData : Database
     {
         var users = GetAllUsers().Where(i => !i.Banned).ToArray();
 
-        if (users.All(u => u.UserId != userId))
+        if (users.Length == 0 || users.All(u => u.UserId != userId))
             return null;
-        
-        var user = users.First(i => i.UserId == userId);
 
-        return users.SkipWhile(i => i.Rank + 5 > user.Rank).Take(Math.Min(10, users.Length)).ToArray();
+        var index = Array.FindIndex(users, u => u.UserId == userId);
+        if (index < 0)
+            return null;
+
+        var startIndex = Math.Max(0, index - 5);
+        var count = Math.Min(10, users.Length - startIndex);
+
+        return users.Skip(startIndex).Take(count).ToArray();
     }
     
     public UserInfo[] GetLeaderboardRange(int start, int range)
