@@ -4,20 +4,30 @@ using Timer = System.Timers.Timer;
 
 namespace CompCube_Server.Models.Client;
 
-// none of this works yet :(
 public class MatchmakingClient(IConnectedClient client)
 {
     public IConnectedClient Client { get; private set; } = client;
 
-    public int MmrThreshold { get; private set; } = 100;
+    public DateTime joinedTime = DateTime.Now;
 
-    private void OnMmrThresholdClockElapsed(object? sender, ElapsedEventArgs e)
-    {
-        MmrThreshold += 500;
-    }
+    const int BaseRange = 50;
+    const int ExpansionRate = 1; // add 1 mmr to base range every second a player isnt queued
+    const int Cap = 400;
 
     public bool CanMatchWithOtherClient(MatchmakingClient other)
     {
-        return Math.Abs(other.MmrThreshold - MmrThreshold) <= MmrThreshold;
+        int thisExpansion = (int)(DateTime.Now - joinedTime).TotalSeconds * ExpansionRate;
+        int otherExpansion = (int)(DateTime.Now - other.joinedTime).TotalSeconds * ExpansionRate;
+
+        int thisRange = Math.Min(BaseRange + thisExpansion, Cap);
+        int otherRange = Math.Min(BaseRange + otherExpansion, Cap);
+
+        int allowedRange = Math.Max(thisRange, otherRange);
+
+        int delta = Math.Abs(
+            Client.UserInfo.Mmr - other.Client.UserInfo.Mmr);
+
+        return delta <= allowedRange;
     }
+
 }
