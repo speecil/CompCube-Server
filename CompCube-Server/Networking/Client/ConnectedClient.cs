@@ -45,14 +45,15 @@ public class ConnectedClient : IConnectedClient, IDisposable
 
                 var buffer = new byte[1024];
 
-                _client.GetStream().Flush();
-
+                if (IsConnectionAlive)
+                    _client.GetStream().Flush();
+                
                 if (!_client.GetStream().DataAvailable)
                     continue;
-
-                var bytesRead = await _client.GetStream().ReadAsync(buffer);
+                
+                var bytesRead = _client.GetStream().Read(buffer, 0, buffer.Length);
                 Array.Resize(ref buffer, bytesRead);
-
+                
                 var json = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
 
                 if (json.Length == 0)
@@ -122,7 +123,7 @@ public class ConnectedClient : IConnectedClient, IDisposable
     {
         await _client.GetStream().WriteAsync(packet.SerializeToBytes());
         
-        // wait a tenth of a second to prevent packets from being sent in the same time frame and being read as
+        // wait a 20th of a second to prevent packets from being sent in the same time frame and being read as
         // one super long packet
         
         // this value may need to be decreased in the future

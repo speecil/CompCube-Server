@@ -4,6 +4,7 @@ using Timer = System.Timers.Timer;
 
 namespace CompCube_Server.Models.Client;
 
+// none of this works yet :(
 public class MatchmakingClient(IConnectedClient client)
 {
     public IConnectedClient Client { get; private set; } = client;

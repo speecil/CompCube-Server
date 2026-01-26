@@ -8,6 +8,7 @@ public class Logger
 {
     private string LogsPath => Path.Combine(Directory.GetCurrentDirectory(), "Logs");
     
+    // bullshit happening in here
     public Logger()
     {
         if (!Directory.Exists(LogsPath))

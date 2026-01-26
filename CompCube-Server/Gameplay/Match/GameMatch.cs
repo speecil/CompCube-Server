@@ -11,7 +11,7 @@ using CompCube_Server.SQL;
 
 namespace CompCube_Server.Gameplay.Match;
 
-public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchLog matchLog, MatchMessageManager messageManager)
+public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchLog matchLog, MatchMessageManager messageManager) : IDisposable
 {
     private MatchSettings _matchSettings;
 
@@ -29,6 +29,11 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
     private readonly Dictionary<Team, int> _mmrChanges = new();
 
     private readonly int _id = matchLog.GetValidMatchId();
+
+    private const int SendWinningVoteToClientDelayInMilliseconds = 3000;
+    private const int VotingTimeInSeconds = 30;
+    private const int TransitionToGameTimeInSeconds = 15;
+    private const int UnpauseTimeInSeconds = 10;
     
     public void Init(IConnectedClient[] red, IConnectedClient[] blue, MatchSettings settings)
     {
@@ -88,7 +93,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
             _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData, HandleVoteDecided);
         
             // await Task.Delay(10);
-            await SendPacketToClientsAsync(new RoundStartedPacket(_currentRoundVoteManager.Options, 30, _roundCount));
+            await SendPacketToClientsAsync(new RoundStartedPacket(_currentRoundVoteManager.Options, VotingTimeInSeconds, _roundCount));
         }
         catch (Exception e)
         {
@@ -103,9 +108,9 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
             _currentRoundScoreManager?.Dispose();
             _currentRoundScoreManager = new ScoreManager(_teams, HandleResults);
 
-            await Task.Delay(3000);
+            await Task.Delay(SendWinningVoteToClientDelayInMilliseconds);
 
-            await SendPacketToClientsAsync(new BeginGameTransitionPacket(votingMap, 15, 10));
+            await SendPacketToClientsAsync(new BeginGameTransitionPacket(votingMap, TransitionToGameTimeInSeconds, UnpauseTimeInSeconds));
         }
         catch (Exception e)
         {
@@ -155,11 +160,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         
         var mmrChange = _mmrChanges[winningTeam];
         
-        DoForEachClient(i => i.OnDisconnected -= HandleClientDisconnect);
-        
         await SendPacketToClientsAsync(new MatchResultsPacket(mmrChange, _points[Team.Red], _points[Team.Blue]));
-        
-        DoForEachClient(i => i.Disconnect());
 
         var winningPlayers = _initialPlayers.Where(i => i.Value == winningTeam)
             .Select(i => i.Key).ToArray();
@@ -167,10 +168,14 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
             .Select(i => i.Key).ToArray();
         
         var matchResultsData = new MatchResultsData(winningPlayers, losingPlayers, mmrChange, false, _id, DateTime.Now);
+
+        if (_matchSettings.LogMatch)
+        {
+            matchLog.AddMatchToTable(matchResultsData);
+            messageManager.PostMatchResults(matchResultsData);
+        }
         
-        matchLog.AddMatchToTable(matchResultsData);
-        
-        messageManager.PostMatchResults(matchResultsData);
+        Dispose();
     }
 
     private async Task EndMatchPrematurely(string reason)
@@ -179,9 +184,16 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
         var winningTeam = _points.Max().Key;
         
-        var matchResults = new MatchResultsData(_initialPlayers.Where(i => i.Value == winningTeam).Select(i => i.Key).ToArray(), _initialPlayers.Where(i => i.Value != winningTeam).Select(i => i.Key).ToArray(), _mmrChanges[winningTeam], true, _id, DateTime.Now);
+        var matchResults = new MatchResultsData(
+            _initialPlayers.Where(i => i.Value == winningTeam).Select(i => i.Key).ToArray(), 
+            _initialPlayers.Where(i => i.Value != winningTeam).Select(i => i.Key).ToArray(), 
+            _mmrChanges[winningTeam], 
+            true, 
+            _id, 
+            DateTime.Now);
         
-        matchLog.AddMatchToTable(matchResults);
+        if (_matchSettings.LogMatch)
+            matchLog.AddMatchToTable(matchResults);
     }
 
     private async void HandleClientDisconnect(IConnectedClient client)
@@ -251,5 +263,19 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
     {
         Red,
         Blue
+    }
+
+    public void Dispose()
+    {
+        _currentRoundScoreManager?.Dispose();
+        _currentRoundVoteManager?.Dispose();
+        
+        DoForEachClient(i =>
+        {
+            i.OnUserVoted -= HandlePlayerVoted;
+            i.OnDisconnected -= HandleClientDisconnect;
+            
+            i.Disconnect();
+        });
     }
 }
