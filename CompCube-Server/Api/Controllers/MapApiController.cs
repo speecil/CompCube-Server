@@ -25,7 +25,7 @@ public class MapApiController(MapData mapData) : ControllerBase
             if (songs.Any(i => i.Hash == song.Hash))
                 continue;
             
-            var allSimilarHashes = allMaps.Where(i => i.Hash.ToLower() == song.Hash.ToLower());
+            var allSimilarHashes = allMaps.Where(i => i.Hash.Equals(song.Hash, StringComparison.CurrentCultureIgnoreCase));
 
             var playlistSong = new PlaylistSong(song.Hash, allSimilarHashes.Select(i => i.Difficulty).ToArray());
             
