@@ -63,6 +63,9 @@ public class VoteManager : IDisposable
         var maps = new List<VotingMap>();
 
         var allMaps = _mapData.GetAllMaps();
+
+        if (allMaps.Count < 3)
+            return allMaps.ToArray();
         
         while (maps.Count < 3)
         {
