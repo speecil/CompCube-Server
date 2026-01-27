@@ -11,7 +11,7 @@ using CompCube_Server.SQL;
 
 namespace CompCube_Server.Gameplay.Match;
 
-public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchLog matchLog, DiscordBot messageManager) : IDisposable
+public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchLog matchLog, IDiscordBot messageManager) : IDisposable
 {
     private MatchSettings _matchSettings;
 
