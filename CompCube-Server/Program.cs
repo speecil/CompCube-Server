@@ -19,13 +19,18 @@ namespace CompCube_Server;
 
 public class Program
 {
+    private static bool _useDiscordIntegration = false;
+    
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+
+        _useDiscordIntegration = builder.Configuration.GetSection("Discord").GetValue<bool>("UseDiscordIntegration");
         
         InstallBindings(builder.Services);
         
-        builder.Services.AddDiscordGateway().AddApplicationCommands();
+        if (_useDiscordIntegration)
+            builder.Services.AddDiscordGateway().AddApplicationCommands();
 
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
@@ -42,8 +47,11 @@ public class Program
         host.UseHttpsRedirection();
         host.MapControllers();
 
-        host.AddModules(typeof(Program).Assembly);
-        host.UseGatewayHandlers();
+        if (_useDiscordIntegration)
+        {
+            host.AddModules(typeof(Program).Assembly);
+            host.UseGatewayHandlers();
+        }
         
         host.Services.GetRequiredService<ConnectionManager>();
         
@@ -84,8 +92,10 @@ public class Program
         services.AddSingleton<UserCommands>();
         services.AddSingleton<ServerCommands>();
         services.AddSingleton<MatchCommands>();
-        
-        services.AddSingleton<MatchMessageManager>();
-        services.AddSingleton<EventMessageManager>();
+
+        if (_useDiscordIntegration)
+            services.AddSingleton<IDiscordBot, DiscordBot>();
+        else
+            services.AddSingleton<IDiscordBot, DummyDiscordBot>();
     }
 }

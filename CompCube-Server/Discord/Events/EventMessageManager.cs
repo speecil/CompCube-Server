@@ -6,13 +6,12 @@ using NetCord.Rest;
 
 namespace CompCube_Server.Discord.Events;
 
-public class EventMessageManager(GatewayClient gatewayClient)
+// i doubt any of this is making it into the final product
+public class EventMessageManager(TextChannel? eventsChannel)
 {
-    private readonly TextChannel? _eventsChannel = gatewayClient.Rest.GetChannelAsync(1400279911008174282).Result as TextChannel;
-
     public void PostEventScores(List<MatchScore> scores, List<UserInfo> usersWithoutScores)
     {
-        MessageProperties messageProperties = "";
+        /*MessageProperties messageProperties = "";
 
         messageProperties.Embeds =
         [
@@ -23,12 +22,12 @@ public class EventMessageManager(GatewayClient gatewayClient)
             }
         ];
 
-        _eventsChannel?.SendMessageAsync(messageProperties);
+        eventsChannel?.SendMessageAsync(messageProperties);*/
     }
 
     public void PostEventPoints(Dictionary<UserInfo, int> points)
     {
-        MessageProperties message = "";
+        /*MessageProperties message = "";
 
         message.Embeds =
         [
@@ -39,18 +38,18 @@ public class EventMessageManager(GatewayClient gatewayClient)
             }
         ];
         
-        _eventsChannel?.SendMessageAsync(message);
+        eventsChannel?.SendMessageAsync(message);*/
     }
 
-    private string FormatStringsIntoPositions(string[] strings)
-    {
-        var returnStr = "";
-
-        for (var i = 0; i < strings.Length; i++)
-        {
-            returnStr += $"{i + 1}. {strings[i]}\n";
-        }
-        
-        return returnStr;
-    }
+    // private string FormatStringsIntoPositions(string[] strings)
+    // {
+    //     var returnStr = "";
+    //
+    //     for (var i = 0; i < strings.Length; i++)
+    //     {
+    //         returnStr += $"{i + 1}. {strings[i]}\n";
+    //     }
+    //     
+    //     return returnStr;
+    // }
 }

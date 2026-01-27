@@ -1,55 +1,25 @@
 ﻿using CompCube_Models.Models.Match;
-using CompCube_Server.Gameplay.Match;
-using CompCube_Server.Gameplay.Matchmaking;
 using CompCube_Server.Logging;
 using NetCord;
-using NetCord.Gateway;
 using NetCord.Rest;
 
 namespace CompCube_Server.Discord.Events;
 
-public class MatchMessageManager
+public class MatchMessageManager(TextChannel? matchChannel, Logger logger, MatchInfoMessageFormatter messageFormatter)
 {
-    private readonly TextChannel? _matchChannel;
-    private readonly MatchInfoMessageFormatter _messageFormatter;
-    private readonly Logger _logger;
-
-    public MatchMessageManager(MatchInfoMessageFormatter messageFormatter, Logger logger, GatewayClient gatewayClient, IConfiguration config)
+    public async Task PostMatchResults(MatchResultsData results)
     {
-        _messageFormatter = messageFormatter;
-        _logger = logger;
-        
-        var channelId = config.GetSection("Discord").GetValue<ulong>("MatchLoggingChannelId", 0);
-
-        if (channelId == 0)
-        {
-            _matchChannel = null;
+        if (results.Premature)
             return;
-        }
-        
-        _matchChannel = gatewayClient.Rest.GetChannelAsync(channelId).Result as TextChannel;
-    }
 
-    public async void PostMatchResults(MatchResultsData results)
-    {
-        try
+        if (matchChannel == null)
+            return;
+
+        var embed = messageFormatter.GetEmbed(results, "Match results:", false);
+
+        await matchChannel.SendMessageAsync(new MessageProperties()
         {
-            if (results.Premature)
-                return;
-
-            if (_matchChannel == null) 
-                return;
-
-            var embed = _messageFormatter.GetEmbed(results, "Match results:", false);
-
-            await _matchChannel.SendMessageAsync(new MessageProperties()
-            {
-                Embeds = [embed]
-            });
-        }
-        catch (Exception e)
-        {
-            _logger.Error(e);
-        }
+            Embeds = [embed]
+        });
     }
 }
