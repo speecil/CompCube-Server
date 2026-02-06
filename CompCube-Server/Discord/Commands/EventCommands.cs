@@ -83,7 +83,7 @@ public class EventCommands(EventsManager eventsManager, EventFactory eventFactor
                                                      }
                                                      && i.Difficulty == beatSaverDiff))
         {
-            
+            return $"Invalid map difficulty or characteristic!";
         }
 
         return $"Map set to {mapKey} ({difficulty})";
