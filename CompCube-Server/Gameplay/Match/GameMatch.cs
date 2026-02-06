@@ -30,6 +30,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
     private readonly int _id = matchLog.GetValidMatchId();
 
+    // refactor into configuration file at some point
     private const int SendWinningVoteToClientDelayInMilliseconds = 3000;
     private const int VotingTimeInSeconds = 30;
     private const int TransitionToGameTimeInSeconds = 15;
