@@ -1,4 +1,6 @@
-﻿using CompCube_Models.Models.Events;
+﻿using BeatSaverSharp.Models;
+using CompCube_Models.Models.Events;
+using CompCube_Server.Api.BeatSaver;
 using CompCube_Server.Discord.Events;
 using CompCube_Server.Gameplay.Events;
 using CompCube_Server.Logging;
@@ -10,17 +12,16 @@ using NetCord.Services.ApplicationCommands;
 namespace CompCube_Server.Discord.Commands;
 
 [SlashCommand("event", "event command")]
-public class EventCommands(EventsManager eventsManager, EventFactory eventFactory, MapData mapData) : ApplicationCommandModule<ApplicationCommandContext>
+public class EventCommands(EventsManager eventsManager, EventFactory eventFactory, MapData mapData, Logger logger, BeatSaverApiWrapper beatSaver) : ApplicationCommandModule<ApplicationCommandContext>
 {
     [SubSlashCommand("create", "creates an event")]
     public InteractionMessageProperties CreateEvent(string eventName, string displayName, string description)
     {
         if (eventsManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName) != null)
-        {
             return "Event already exists!";
-        }
         
-        eventsManager.AddEvent(eventFactory.Create(new EventData(eventName, displayName, description, false)));
+        
+        eventsManager.AddEvent(eventFactory.Create(new EventData(eventName, displayName, description, Context.User.Username, Context.User.Id,true)));
         return "Event created!";
     }
 
@@ -32,11 +33,8 @@ public class EventCommands(EventsManager eventsManager, EventFactory eventFactor
         if (e == null)
             return $"Event {eventName} not found!";
         
-        if (e.ClientCount == 0)
-            return "Cannot start: Player count must be above 0!";
-
-        if (e.ClientCount % 2 == 1)
-            return "Cannot start: Player count must be even!";
+        if (e.ClientCount < 2)
+            return "Cannot start: Player count must be above 1!";
         
         e.StartEvent();
         return $"Event {eventName} started with {e.ClientCount} players!";
@@ -46,29 +44,49 @@ public class EventCommands(EventsManager eventsManager, EventFactory eventFactor
     public InteractionMessageProperties StopEvent(string eventName)
     {
         var e = eventsManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName);
+
+        if (e?.EventData.EventOwnerId != Context.User.Id && !Context.Guild!.IsOwner)
+            return "You cannot stop this event!";
         
         if (e == null)
             return $"Event {eventName} not found!";
         
-        //TODO: implement
+        eventsManager.RemoveEvent(e);
         
         return $"Event {eventName} stopped!";
     }
 
     [SubSlashCommand("setmap", "sets the map of an event")]
-    public InteractionMessageProperties SetMap(string eventName, string mapId)
+    public async Task<InteractionMessageProperties> SetMap(string eventName, string mapKey, string difficulty)
     {
         var e = eventsManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName);
         
         if (e == null)
             return $"Event {eventName} not found!";
-        
-        //todo: map ids
-        var map = mapData.GetAllMaps().First();
-        
-        e.SetMap(map);
 
-        return $"Map set to {mapId}";
+        if (e.EventData.EventOwnerId != Context.User.Id && !Context.Guild!.IsOwner)
+            return "You cannot set the map of this event!";
+        
+        var map = await beatSaver.GetBeatmapFromKey(mapKey);
+
+        if (map == null)
+            return "Could not find beatmap!";
+        
+        if (!Enum.TryParse<BeatmapDifficulty.BeatSaverBeatmapDifficulty>(difficulty, out var beatSaverDiff))
+            return "Could not parse difficulty! (Options were Easy, Normal, Expert, and ExpertPlus. This is case sensitive!)";
+
+        if (!map.LatestVersion.Difficulties.Any(i => i is
+                                                     {
+                                                         MappingExtensions: false, 
+                                                         NoodleExtensions: false,
+                                                         Characteristic: BeatmapDifficulty.BeatmapCharacteristic.Standard
+                                                     }
+                                                     && i.Difficulty == beatSaverDiff))
+        {
+            return $"Invalid map difficulty or characteristic!";
+        }
+
+        return $"Map set to {mapKey} ({difficulty})";
     }
 
     [SubSlashCommand("startmatch", "starts the map match")]
@@ -76,8 +94,11 @@ public class EventCommands(EventsManager eventsManager, EventFactory eventFactor
     {
         var e = eventsManager.ActiveEvents.FirstOrDefault(i => i.EventData.EventName == eventName);
 
-        if  (e == null)
+        if (e == null)
             return "Event not found!";
+        
+        if (e.EventData.EventOwnerId != Context.User.Id && !Context.Guild!.IsOwner)
+            return "You cannot start this event!";
 
         try
         {
@@ -85,7 +106,8 @@ public class EventCommands(EventsManager eventsManager, EventFactory eventFactor
         }
         catch (Exception ex)
         {
-            return $"Could not start event: {ex}";
+            logger.Error(ex);
+            return $"Could not start event! Please try again later.";
         }
         
         return $"Event {eventName} started!";

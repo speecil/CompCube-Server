@@ -10,7 +10,7 @@ public class ContributorsApiController(IConfiguration config) : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<Contributor[]> GetContributors()
     {
-        var contributors = config.GetSection("contributors").Get<Contributor[]>();
+        var contributors = config.GetSection("Contributors").Get<Contributor[]>();
 
         if (contributors == null)
             throw new Exception("Could not parse contributors from file!");

@@ -11,7 +11,7 @@ using CompCube_Server.SQL;
 
 namespace CompCube_Server.Gameplay.Match;
 
-public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchLog matchLog, MatchMessageManager messageManager) : IDisposable
+public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchLog matchLog, IDiscordBot messageManager) : IDisposable
 {
     private MatchSettings _matchSettings;
 
@@ -30,6 +30,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
     private readonly int _id = matchLog.GetValidMatchId();
 
+    // refactor into configuration file at some point
     private const int SendWinningVoteToClientDelayInMilliseconds = 3000;
     private const int VotingTimeInSeconds = 30;
     private const int TransitionToGameTimeInSeconds = 15;
