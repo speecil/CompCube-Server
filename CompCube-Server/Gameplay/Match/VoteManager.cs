@@ -1,4 +1,4 @@
-﻿using CompCube_Models.Models.ClientData;
+﻿using System.Threading;
 using CompCube_Models.Models.Map;
 using CompCube_Models.Models.Packets.UserPackets;
 using CompCube_Server.Interfaces;
@@ -10,84 +10,139 @@ public class VoteManager : IDisposable
 {
     private readonly Random _random = new();
     private readonly MapData _mapData;
-    
-    private readonly Dictionary<UserInfo, VotingMap?> _playerVotes;
+
+    private readonly Dictionary<IConnectedClient, VotingMap?> _playerVotes;
 
     public readonly VotingMap[] Options;
 
     private readonly Action<VotingMap> _voteDecidedCallBack;
 
-    private readonly List<IConnectedClient> _clientsTracked;
-    
-    public VoteManager(IConnectedClient[] players, MapData mapData, Action<VotingMap> voteDecidedCallBack)
+    private readonly int _votingTimeSeconds;
+    private readonly CancellationTokenSource _cts = new();
+    private readonly object _lock = new();
+    private bool _decided = false;
+
+    public VoteManager(IConnectedClient[] players, MapData mapData, Action<VotingMap> voteDecidedCallBack, int votingTimeSeconds)
     {
         _mapData = mapData;
         _voteDecidedCallBack = voteDecidedCallBack;
+        _votingTimeSeconds = votingTimeSeconds;
 
-        _clientsTracked = players.ToList();
-        
-        _playerVotes = players.Select(i => new KeyValuePair<UserInfo,VotingMap?>(i.UserInfo, null)).ToDictionary();
+        _playerVotes = players.Select(i => new KeyValuePair<IConnectedClient, VotingMap?>(i, null)).ToDictionary();
 
         Options = GetRandomMapSelection();
 
         foreach (var player in players)
-            player.OnUserVoted += HandlePlayerVote;    
+            player.OnUserVoted += HandlePlayerVote;
+
+        Task.Run(() => WaitAndDecideAsync(_cts.Token));
     }
+
+    private async Task WaitAndDecideAsync(CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(_votingTimeSeconds), token);
+            DecideVoteIfAllowed(force: true);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
 
     private void HandlePlayerVote(VotePacket vote, IConnectedClient client)
     {
-        _playerVotes[client.UserInfo] = Options[vote.VoteIndex];
-        
+        lock (_lock)
+        {
+            if (_decided)
+                return;
+
+            if (!_playerVotes.ContainsKey(client))
+                return;
+
+            if (Options == null || Options.Length == 0)
+                return;
+
+            if (vote.VoteIndex < 0 || vote.VoteIndex >= Options.Length)
+            {
+                return;
+            }
+
+            _playerVotes[client] = Options[vote.VoteIndex];
+        }
+
         DecideVoteIfAllowed();
     }
+
 
     public void HandlePlayerDisconnected(IConnectedClient player)
     {
-        _playerVotes.Remove(player.UserInfo);
+        lock (_lock)
+        {
+            if (_decided) return;
 
-        player.OnUserVoted -= HandlePlayerVote;
-        
+            _playerVotes.Remove(player);
+
+            player.OnUserVoted -= HandlePlayerVote;
+        }
+
         DecideVoteIfAllowed();
     }
 
-    private void DecideVoteIfAllowed()
+    private void DecideVoteIfAllowed(bool force = false)
     {
-        if (_playerVotes.Any(i => i.Value == null))
-            return;
+        lock (_lock)
+        {
+            if (_decided) return;
 
-        var map = _playerVotes.ElementAt(_random.Next(0, _playerVotes.Count)).Value;
+            if (!force && _playerVotes.Any(i => i.Value == null))
+                return;
 
-        if (map == null)
-            DecideVoteIfAllowed();
+            VotingMap? map = null;
 
-        _voteDecidedCallBack?.Invoke(map!);
+            var votedMaps = _playerVotes.Values.Where(v => v != null).ToArray();
+            if (votedMaps.Length > 0)
+            {
+                map = votedMaps[_random.Next(0, votedMaps.Length)];
+            }
+            else
+            {
+                if (Options.Length > 0)
+                    map = Options[_random.Next(0, Options.Length)];
+            }
+
+            if (map == null)
+                return;
+
+            _decided = true;
+            _voteDecidedCallBack?.Invoke(map!);
+        }
+
+        try { _cts.Cancel(); } catch { }
     }
 
     private VotingMap[] GetRandomMapSelection()
     {
-        var maps = new List<VotingMap>();
-
         var allMaps = _mapData.GetAllMaps();
 
-        if (allMaps.Count < 3)
-            return allMaps.ToArray();
-        
-        while (maps.Count < 3)
-        {
-            var map = allMaps[_random.Next(0, allMaps.Count)];
+        if (allMaps == null || allMaps.Count == 0)
+            return Array.Empty<VotingMap>();
 
-            if (maps.Any(i => i.Hash == map.Hash)) // || i.MapCategory == map.MapCategory))
-                continue;
-            
-            maps.Add(map);
-        }
+        var shuffled = allMaps.OrderBy(_ => _random.Next()).ToList();
 
-        return maps.ToArray();
+        var selected = shuffled
+            .DistinctBy(m => m.Hash)
+            .Take(3)
+            .ToArray();
+
+        return selected;
     }
 
-    public void Dispose() => _clientsTracked.ForEach(i =>
+    public void Dispose()
     {
-        i.OnUserVoted -= HandlePlayerVote;
-        i.OnDisconnected -= HandlePlayerDisconnected;
-    });
+        try { _cts.Cancel(); } catch { }
+        _playerVotes.Keys.ToList().ForEach(i => i.OnUserVoted -= HandlePlayerVote);
+        _cts.Dispose();
+    }
 }

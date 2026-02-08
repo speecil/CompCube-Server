@@ -32,7 +32,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
     // refactor into configuration file at some point
     private const int SendWinningVoteToClientDelayInMilliseconds = 3000;
-    private const int VotingTimeInSeconds = 30;
+    private const int VotingTimeInSeconds = 15;
     private const int TransitionToGameTimeInSeconds = 15;
     private const int UnpauseTimeInSeconds = 10;
     
@@ -78,8 +78,6 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
     public async Task StartMatchAsync()
     {
-        _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData, HandleVoteDecided);
-        
         await SendPacketToClientsAsync(new MatchCreatedPacket(_teams.Where(i => i.Value == Team.Red).Select(i => i.Key.UserInfo).ToArray(), _teams.Where(i => i.Value == Team.Blue).Select(i => i.Key.UserInfo).ToArray()));
 
         await StartRound();
@@ -91,7 +89,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         {
             _roundCount++;
             _currentRoundVoteManager?.Dispose();
-            _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData, HandleVoteDecided);
+            _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData, HandleVoteDecided, VotingTimeInSeconds);
         
             // await Task.Delay(10);
             await SendPacketToClientsAsync(new RoundStartedPacket(_currentRoundVoteManager.Options, VotingTimeInSeconds, _roundCount));
