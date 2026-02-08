@@ -65,7 +65,7 @@ public class StandardCompetitiveQueue : StandardQueue
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "Matchmaking loop error");
+                _logger.Error($"Matchmaking loop error: {ex}");
             }
 
             await Task.Delay(2000, token);
