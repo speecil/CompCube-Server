@@ -30,6 +30,8 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
     private readonly int _id = matchLog.GetValidMatchId();
 
+    private List<VotingMap> _playedMaps = [];
+
     // refactor into configuration file at some point
     private const int SendWinningVoteToClientDelayInMilliseconds = 3000;
     private const int VotingTimeInSeconds = 15;
@@ -89,8 +91,8 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         {
             _roundCount++;
             _currentRoundVoteManager?.Dispose();
-            _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData, HandleVoteDecided, VotingTimeInSeconds);
-        
+            _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData, HandleVoteDecided, VotingTimeInSeconds, exclude: _playedMaps);
+            
             // await Task.Delay(10);
             await SendPacketToClientsAsync(new RoundStartedPacket(_currentRoundVoteManager.Options, VotingTimeInSeconds, _roundCount));
         }
@@ -104,6 +106,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
     {
         try
         {
+            _playedMaps.Add(votingMap);
             _currentRoundScoreManager?.Dispose();
             _currentRoundScoreManager = new ScoreManager(_teams, HandleResults);
 
@@ -261,7 +264,8 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
     public enum Team
     {
         Red,
-        Blue
+        Blue,
+        FreeForAll
     }
 
     public void Dispose()
