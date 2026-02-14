@@ -17,7 +17,9 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
     private readonly Dictionary<UserInfo, Team> _initialPlayers = new();
 
-    private readonly Dictionary<IConnectedClient, Team> _teams = new();
+    private List<IConnectedClient> _clients = [];
+    
+    private readonly Dictionary<string, Team> _teams = new();
 
     private readonly Dictionary<Team, int> _points = new();
 
@@ -39,6 +41,8 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
     public void Init(IConnectedClient[] red, IConnectedClient[] blue, MatchSettings settings)
     {
         _matchSettings = settings;
+
+        _clients = red.Concat(blue).ToList();
         
         SetupTeam(red, Team.Red);
         SetupTeam(blue, Team.Blue);
@@ -58,7 +62,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
                 player.OnDisconnected += HandleClientDisconnect;
                 player.OnUserVoted += HandlePlayerVoted;
                 
-                _teams.Add(player, team);
+                _teams.Add(player.UserInfo.UserId, team);
                 _initialPlayers.Add(player.UserInfo, team);
             }
         }
@@ -78,8 +82,13 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
     public async Task StartMatchAsync()
     {
-        await SendPacketToClientsAsync(new MatchCreatedPacket(_teams.Where(i => i.Value == Team.Red).Select(i => i.Key.UserInfo).ToArray(), _teams.Where(i => i.Value == Team.Blue).Select(i => i.Key.UserInfo).ToArray()));
+        // await SendPacketToClientsAsync(new MatchCreatedPacket(_teams.Where(i => i.Value == Team.Red).Select(i => i.Key.UserInfo).ToArray(), _teams.Where(i => i.Value == Team.Blue).Select(i => i.Key.UserInfo).ToArray()));
 
+        var redPlayers = _initialPlayers.Where(i => _teams[i.Key.UserId] == Team.Red).Select(i => i.Key).ToArray();
+        var bluePlayers = _initialPlayers.Where(i => _teams[i.Key.UserId] == Team.Blue).Select(i => i.Key).ToArray();
+        
+        await SendPacketToClientsAsync(new MatchCreatedPacket(redPlayers, bluePlayers));
+        
         await StartRound();
     }
 
@@ -89,7 +98,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         {
             _roundCount++;
             _currentRoundVoteManager?.Dispose();
-            _currentRoundVoteManager = new VoteManager(_teams.Keys.ToArray(), mapData, HandleVoteDecided, VotingTimeInSeconds);
+            _currentRoundVoteManager = new VoteManager(_clients.ToArray(), mapData, HandleVoteDecided, VotingTimeInSeconds);
         
             // await Task.Delay(10);
             await SendPacketToClientsAsync(new RoundStartedPacket(_currentRoundVoteManager.Options, VotingTimeInSeconds, _roundCount));
@@ -105,7 +114,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         try
         {
             _currentRoundScoreManager?.Dispose();
-            _currentRoundScoreManager = new ScoreManager(_teams, HandleResults);
+            _currentRoundScoreManager = new ScoreManager(_clients.ToArray(), HandleResults);
 
             await Task.Delay(SendWinningVoteToClientDelayInMilliseconds);
 
@@ -121,9 +130,15 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
     {
         try
         {
-            var redPoints = scores.Where(i => _teams[i.Key] == Team.Red).Sum(i => i.Value.Points);
-            var bluePoints = scores.Where(i => _teams[i.Key] == Team.Blue).Sum(i => i.Value.Points);
-
+            // stupid bandaid patch that will not work with match sizes of more than 2 people
+            var redPoints = scores.First(i => _teams[i.Key.UserInfo.UserId] == Team.Red).Value.Points;
+            var bluePoints = scores.First(i => _teams[i.Key.UserInfo.UserId] == Team.Blue).Value.Points;
+            
+            // if (redPlayers.Any())
+            //
+            // if (bluePlayers.Any())
+            //     bluePoints = bluePlayers.Sum(i => i.Value.Points);
+            
             if (redPoints >= bluePoints)
                 _points[Team.Red] += 1;
 
@@ -204,13 +219,13 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
             if (_matchSettings.Competitive)
                 userData.SetMmr(client.UserInfo, client.UserInfo.Mmr - _matchSettings.MmrPenaltyOnDisconnect);
 
-            if (_teams.All(i => i.Value != _teams[client]))
+            if (_teams.All(i => i.Value != _teams[client.UserInfo.UserId]))
             {
                 await EndMatchPrematurely("OpponentsDisconnected");
                 return;
             }
 
-            _teams.Remove(client);
+            _clients.Remove(client);
         
             _currentRoundScoreManager?.HandlePlayerDisconneced(client);
             _currentRoundVoteManager?.HandlePlayerDisconnected(client);
@@ -223,10 +238,10 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
     
     private async Task SendPacketToClientsAsync(ServerPacket packet, Team? teamFilter = null, IConnectedClient[]? playerFilter = null)
     {
-        var players = _teams.Keys.ToList();
+        var players = _clients.ToList();
 
         if (teamFilter != null)
-            players = players.Where(i => _teams[i] == teamFilter).ToList();
+            players = players.Where(i => _teams[i.UserInfo.UserId] == teamFilter).ToList();
 
         if (playerFilter != null)
             players = players.Where(i => !playerFilter.Contains(i)).ToList();
@@ -239,7 +254,7 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
 
     private void DoForEachClient(Action<IConnectedClient> action)
     {
-        var players = _teams.Keys.ToList();
+        var players = _clients.ToList();
         
         foreach (var player in players)
             action.Invoke(player);
