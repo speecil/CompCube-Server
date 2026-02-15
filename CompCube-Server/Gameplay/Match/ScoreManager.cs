@@ -10,15 +10,15 @@ public class ScoreManager : IDisposable
 
     private readonly Action<Dictionary<IConnectedClient, Score>> _onScoresDecidedCallback;
     
-    public ScoreManager(Dictionary<IConnectedClient, GameMatch.Team> players, Action<Dictionary<IConnectedClient, Score>> onScoresDecidedCallback)
+    public ScoreManager(IConnectedClient[] players, Action<Dictionary<IConnectedClient, Score>> onScoresDecidedCallback)
     {
         _onScoresDecidedCallback = onScoresDecidedCallback;
         
-        _scores = players.Select(i => new KeyValuePair<IConnectedClient, Score?>(i.Key, null)).ToDictionary();
+        _scores = players.Select(i => new KeyValuePair<IConnectedClient, Score?>(i, null)).ToDictionary();
 
         foreach (var player in players)
         {
-            player.Key.OnScoreSubmission += HandleScoreSubmitted;
+            player.OnScoreSubmission += HandleScoreSubmitted;
         }
     }
 
@@ -35,8 +35,12 @@ public class ScoreManager : IDisposable
     {
         if (_scores.Any(i => i.Value == null))
             return;
+
+        var scoreDictionary = _scores
+            .Select(i => new KeyValuePair<IConnectedClient, Score>(i.Key, i.Value ?? Score.Empty))
+            .OrderBy(i => i.Value.Points).ToDictionary();
         
-        _onScoresDecidedCallback.Invoke(_scores.Select(i => new KeyValuePair<IConnectedClient,Score>(i.Key, i.Value ?? Score.Empty)).OrderBy(i => i.Value.Points).ToDictionary());
+        _onScoresDecidedCallback.Invoke(scoreDictionary);
     }
 
     public void HandlePlayerDisconneced(IConnectedClient player)
