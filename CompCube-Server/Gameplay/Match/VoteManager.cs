@@ -14,6 +14,7 @@ public class VoteManager : IDisposable
     private readonly Dictionary<IConnectedClient, VotingMap?> _playerVotes;
 
     public readonly VotingMap[] Options;
+    private readonly List<VotingMap> _exclude;
 
     private readonly Action<VotingMap> _voteDecidedCallBack;
 
@@ -22,11 +23,12 @@ public class VoteManager : IDisposable
     private readonly object _lock = new();
     private bool _decided = false;
 
-    public VoteManager(IConnectedClient[] players, MapData mapData, Action<VotingMap> voteDecidedCallBack, int votingTimeSeconds)
+    public VoteManager(IConnectedClient[] players, MapData mapData, Action<VotingMap> voteDecidedCallBack, int votingTimeSeconds, List<VotingMap> exclude = null!)
     {
         _mapData = mapData;
         _voteDecidedCallBack = voteDecidedCallBack;
         _votingTimeSeconds = votingTimeSeconds;
+        _exclude = exclude ?? [];
 
         _playerVotes = players.Select(i => new KeyValuePair<IConnectedClient, VotingMap?>(i, null)).ToDictionary();
 
@@ -124,7 +126,7 @@ public class VoteManager : IDisposable
 
     private VotingMap[] GetRandomMapSelection()
     {
-        var allMaps = _mapData.GetAllMaps();
+        var allMaps = _mapData.GetAllMaps(exclude: _exclude);
 
         if (allMaps == null || allMaps.Count == 0)
             return Array.Empty<VotingMap>();

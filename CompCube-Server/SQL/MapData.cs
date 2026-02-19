@@ -29,7 +29,7 @@ public class MapData(Logger logger) : TableManager
         command.ExecuteNonQuery();
     }
 
-    public List<VotingMap> GetAllMaps()
+    public List<VotingMap> GetAllMaps(List<VotingMap> exclude = null!)
     {
         var maps = new List<VotingMap>();
         
@@ -61,7 +61,9 @@ public class MapData(Logger logger) : TableManager
             
             maps.Add(new VotingMap(hash, difficulty, category, categoryLabel));
         }
-        
+
+        if(exclude != null) maps = maps.Where(m => !exclude.Any(e => e.Hash == m.Hash)).ToList();
+
         return maps;
     }
 }

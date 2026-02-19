@@ -35,6 +35,12 @@ public class StandardCompetitiveQueue : StandardQueue
     public override void AddClientToPool(IConnectedClient client)
     {
         _pendingAdds.Enqueue(client);
+        client.OnDisconnected += OnClientDisconnected;
+    }
+
+    private void OnClientDisconnected(IConnectedClient client)
+    {
+        _clientPool.RemoveAll(c => c.Client == client);
     }
 
     public void Stop()
@@ -51,11 +57,12 @@ public class StandardCompetitiveQueue : StandardQueue
     private async Task MatchmakingLoop()
     {
         var token = _cts.Token;
-
+        _logger.Info("Starting matchmaking loop for Standard Competitive Queue.");
         while (!token.IsCancellationRequested)
         {
             try
             {
+                _logger.Info($"Matchmaking loop tick. Current pool size: {_clientPool.Count}, pending adds: {_pendingAdds.Count}");
                 DrainPendingAdds();
 
                 if (_clientPool.Count >= 2)
@@ -82,6 +89,7 @@ public class StandardCompetitiveQueue : StandardQueue
 
     private void RunMatchmakingPass()
     {
+        _logger.Info("Running matchmaking pass.");
         var sorted = _clientPool
             .OrderBy(c => c.Client.UserInfo.Mmr)
             .ToList();
@@ -94,11 +102,17 @@ public class StandardCompetitiveQueue : StandardQueue
             if (!a.CanMatchWithOtherClient(b))
             {
                 i++;
+                _logger.Info($"Clients {a.Client.UserInfo.Username} and {b.Client.UserInfo.Username} cannot be matched yet. Skipping.");
                 continue;
             }
 
+
+            _logger.Info($"Matching clients {a.Client.UserInfo.Username} and {b.Client.UserInfo.Username} with MMRs {a.Client.UserInfo.Mmr} and {b.Client.UserInfo.Mmr}.");
+
             _clientPool.Remove(a);
             _clientPool.Remove(b);
+            a.Client.OnDisconnected -= OnClientDisconnected;
+            b.Client.OnDisconnected -= OnClientDisconnected;
 
             var match = _gameMatchFactory.CreateNewMatch(
                 [a.Client],
@@ -110,5 +124,6 @@ public class StandardCompetitiveQueue : StandardQueue
 
             i += 2;
         }
+        _logger.Info("Finished matchmaking pass.");
     }
 }
