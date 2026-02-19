@@ -11,7 +11,7 @@ using CompCube_Server.SQL;
 
 namespace CompCube_Server.Gameplay.Match;
 
-public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchLog matchLog, IDiscordBot messageManager) : IDisposable
+public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchLog matchLog, IDiscordBot messageManager, RankingData rankingData) : IDisposable
 {
     private MatchSettings _matchSettings;
 
@@ -191,15 +191,23 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
             matchLog.AddMatchToTable(matchResultsData);
             messageManager.PostMatchResults(matchResultsData);
         }
+
+        if (_matchSettings.Competitive)
+        {
+            rankingData.UpdateUserDataFromMatch(matchResultsData, mmrChange, _matchSettings.MmrPenaltyOnDisconnect);
+        }
         
         Dispose();
     }
 
-    private async Task EndMatchPrematurely(string reason)
+    private async Task EndMatchPrematurely(string reason, Team? forcedWinningTeam = null)
     {
         await SendPacketToClientsAsync(new PrematureMatchEndPacket(reason));
 
         var winningTeam = _points.Max().Key;
+        
+        if (forcedWinningTeam != null)
+            winningTeam = forcedWinningTeam.Value;
         
         var matchResults = new MatchResultsData(
             _initialPlayers.Where(i => i.Value == winningTeam).Select(i => i.Key).ToArray(), 
@@ -218,13 +226,13 @@ public class GameMatch(MapData mapData, Logger logger, UserData userData, MatchL
         try
         {
             client.OnDisconnected -= HandleClientDisconnect;
-        
-            if (_matchSettings.Competitive)
-                userData.SetMmr(client.UserInfo, client.UserInfo.Mmr - _matchSettings.MmrPenaltyOnDisconnect);
 
             if (_teams.All(i => i.Value != _teams[client.UserInfo.UserId]))
             {
-                await EndMatchPrematurely("OpponentsDisconnected");
+                var losingTeam = _teams[client.UserInfo.UserId];
+                var winningTeam = losingTeam == Team.Red ? Team.Blue : Team.Red;
+                
+                await EndMatchPrematurely("OpponentsDisconnected", winningTeam);
                 return;
             }
 

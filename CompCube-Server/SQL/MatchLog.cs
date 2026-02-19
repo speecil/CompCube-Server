@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace CompCube_Server.SQL;
 
-public class MatchLog(UserData userData) : TableManager
+public class MatchLog(UserData userData, RankingData rankingData) : TableManager
 {
     private readonly Random _random = new();
     
@@ -57,8 +57,6 @@ public class MatchLog(UserData userData) : TableManager
         command.Parameters.AddWithValue("prematureEnd", results.Premature);
         command.Parameters.AddWithValue("time", results.Time.ToString(CultureInfo.InvariantCulture));
         
-        results.Winner.ToList().ForEach(i => userData.UpdateUserDataFromMatch(i, results.MmrChange, results.Winner.Contains(i)));
-
         command.ExecuteNonQuery();
     }
 

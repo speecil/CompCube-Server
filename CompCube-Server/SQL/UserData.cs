@@ -5,13 +5,14 @@ using CompCube_Server.Divisions;
 
 namespace CompCube_Server.SQL;
 
-public class UserData : TableManager
+public class UserData(RankingData rankingData) : TableManager
 {
     public UserInfo? GetUserByDiscordId(string discordId)
     {
         var command = Connection.CreateCommand();
-        command.CommandText = "SELECT * FROM userData JOIN rankingData USING (id) WHERE discordId = @discordId LIMIT 1";
+        command.CommandText = "SELECT * FROM userData JOIN rankingData USING (id) WHERE discordId = @discordId AND season = @season LIMIT 1";
         command.Parameters.AddWithValue("discordId", discordId);
+        command.Parameters.AddWithValue("season", rankingData.CurrentSeason);
         
         using var reader = command.ExecuteReader();
 
@@ -31,11 +32,15 @@ public class UserData : TableManager
         command.ExecuteNonQuery();
     }
 
-    public UserInfo? GetUserById(string userId)
+    public UserInfo? GetUserById(string userId, int season = -1)
     {
+        if (season == -1)
+            season = rankingData.CurrentSeason;
+        
         var command = Connection.CreateCommand();
-        command.CommandText = "SELECT * FROM userData JOIN rankingData USING (id) WHERE userData.id = @id LIMIT 1";
+        command.CommandText = "SELECT * FROM userData JOIN rankingData USING (id) WHERE userData.id = @id AND rankingData.season = @season LIMIT 1";
         command.Parameters.AddWithValue("id", userId);
+        command.Parameters.AddWithValue("season", season);
         using var reader = command.ExecuteReader();
 
         while (reader.Read())
@@ -44,49 +49,11 @@ public class UserData : TableManager
         return null;
     }
 
-    public void UpdateUserDataFromMatch(UserInfo userInfo, int mmrChange, bool won)
-    {
-        SetMmr(userInfo, won ? mmrChange : -mmrChange);
-        
-        var command = Connection.CreateCommand();
-        command.CommandText = "UPDATE rankingData SET totalGames = @newTotalGames WHERE id = @id";
-        command.Parameters.AddWithValue("newTotalGames", userInfo.TotalGames + 1);
-        command.Parameters.AddWithValue("id", userInfo.UserId);
-        command.ExecuteNonQuery();
-
-        if (!won)
-        {
-            command.CommandText = "UPDATE rankingData SET bestWinstreak = 0 WHERE id = @id LIMIT 1";
-            command.Parameters.AddWithValue("id", userInfo.UserId);
-            command.ExecuteNonQuery();
-            return;
-        }
-        
-        command.CommandText = "UPDATE rankingData SET wins = @newWins WHERE id = @id LIMIT 1";
-        command.Parameters.AddWithValue("newWins", userInfo.Wins + 1);
-        command.Parameters.AddWithValue("id", userInfo.UserId);
-        command.ExecuteNonQuery();
-
-        command = Connection.CreateCommand();
-        command.CommandText = "UPDATE rankingData SET winstreak = @newWinstreak WHERE id = @id LIMIT 1";
-        command.Parameters.AddWithValue("newWinstreak", userInfo.Winstreak + 1);
-        command.Parameters.AddWithValue("id", userInfo.UserId);
-        command.ExecuteNonQuery();
-
-        if (userInfo.Winstreak + 1 <= userInfo.HighestWinstreak) 
-            return;
-            
-        command = Connection.CreateCommand();
-        command.CommandText = "UPDATE rankingData SET bestWinstreak = @newHighestWinstreak WHERE id = @id LIMIT 1";
-        command.Parameters.AddWithValue("newHighestWinstreak", userInfo.HighestWinstreak + 1);
-        command.Parameters.AddWithValue("id", userInfo.UserId);
-        command.ExecuteNonQuery();
-    }
-
     public List<UserInfo> GetAllUsers()
     {
         var command = Connection.CreateCommand();
-        command.CommandText = "SELECT * FROM userData JOIN rankingData USING (id) ORDER BY mmr DESC";
+        command.CommandText = "SELECT * FROM userData JOIN rankingData USING (id) WHERE season = @season ORDER BY mmr DESC";
+        command.Parameters.AddWithValue("season", rankingData.CurrentSeason);
         
         var userList = new List<UserInfo>();
         
@@ -95,7 +62,7 @@ public class UserData : TableManager
         while (reader.Read())
         {
             var user = GetUserInfoFromReader(reader);
-            if (user == null) 
+            if (user == null || user.Banned) 
                 continue;
             userList.Add(user);
         }
@@ -105,43 +72,32 @@ public class UserData : TableManager
     
     private UserInfo? GetUserInfoFromReader(SQLiteDataReader reader)
     {
-        if (reader.FieldCount == 0) 
-            return null;
-        
-        var userId =  reader.GetString(0);    
-        var mmr = reader.GetInt32(5);
+        var id = reader.GetString(0);
         var userName = reader.GetString(1);
         Badge? badge = null;
-        string? discordId = null;
-
-        var rankCommand = Connection.CreateCommand();
-        rankCommand.CommandText = "SELECT COUNT(*) FROM rankingData WHERE mmr > @mmrThreshold ORDER BY mmr";
-        rankCommand.Parameters.AddWithValue("mmrThreshold", mmr);
-        var rank = (long) (rankCommand.ExecuteScalar() ?? throw new Exception("Could not get user rank!")) + 1;
-
+        
         if (!reader.IsDBNull(2))
             badge = GetBadge(reader.GetString(2));
-            
+        
+        string? discordId = null;
+        
         if (!reader.IsDBNull(3))
             discordId = reader.GetString(3);
-
+        
         var banned = reader.GetBoolean(4);
+        var mmr = reader.GetInt32(6);
+        var wins = reader.GetInt32(7);
+        var totalGames = reader.GetInt32(8);
+        var winstreak = reader.GetInt32(9);
+        var bestWinstreak = reader.GetInt32(10);
 
-        var wins = reader.GetInt32(6);
-        var totalGames = reader.GetInt32(7);
-        var winstreak = reader.GetInt32(8);
-        var highestWinstreak = reader.GetInt32(9);
-            
-        return new UserInfo(userName, userId, mmr, DivisionManager.GetDivisionFromMmr(mmr), badge, rank, discordId, banned, wins, totalGames, winstreak, highestWinstreak);
-    }
+        using var rankCommand = Connection.CreateCommand();
+        rankCommand.CommandText = "SELECT COUNT(*) FROM userData JOIN rankingData USING (id) WHERE mmr > @mmrThreshold AND banned = false AND season = @season ORDER BY mmr";
+        rankCommand.Parameters.AddWithValue("@season", rankingData.CurrentSeason);
+        rankCommand.Parameters.AddWithValue("@mmrThreshold", mmr);
+        var rank = (long) (rankCommand.ExecuteScalar() ?? -1) + 1;
 
-    public void SetMmr(UserInfo user, int newMmr)
-    {
-        var command = Connection.CreateCommand();
-        command.CommandText = "UPDATE rankingData SET mmr = @newMmr WHERE rankingData.id = @id";
-        command.Parameters.AddWithValue("newMmr", Math.Max(0, newMmr));
-        command.Parameters.AddWithValue("id", user.UserId);
-        command.ExecuteNonQuery();
+        return new UserInfo(userName, id, mmr, DivisionManager.GetDivisionFromMmr(mmr), badge, rank, discordId, banned, wins, totalGames, winstreak, bestWinstreak);
     }
 
     private Badge? GetBadge(string? badgeName)
@@ -197,16 +153,13 @@ public class UserData : TableManager
     
     public UserInfo UpdateUserDataOnLogin(string userId, string userName)
     {
-        var addToUserDataCommand = Connection.CreateCommand();
+        rankingData.CreateRankingDataForUserIfNotExists(userId);
+        
+        using var addToUserDataCommand = Connection.CreateCommand();
         addToUserDataCommand.CommandText = "INSERT OR IGNORE INTO userData VALUES (@userId, @userName, null, null, false)";
         addToUserDataCommand.Parameters.AddWithValue("@userId", userId);
         addToUserDataCommand.Parameters.AddWithValue("@userName", userName);
         addToUserDataCommand.ExecuteNonQuery();
-        
-        var addRankingDataCommand = Connection.CreateCommand();
-        addRankingDataCommand.CommandText = "INSERT OR IGNORE INTO rankingData VALUES (@userId, 1000, 0, 0, 0, 0)";
-        addRankingDataCommand.Parameters.AddWithValue("@userId", userId);
-        addRankingDataCommand.ExecuteNonQuery();
 
         return GetUserById(userId) ?? throw new Exception("Could not find updated user!");
     }
@@ -214,7 +167,6 @@ public class UserData : TableManager
     protected override void CreateInitialTables()
     {
         CreateUserDataTable();
-        CreateRankingDataTable();
         CreateBadgeTable();
     }
 
@@ -222,14 +174,6 @@ public class UserData : TableManager
     {
         var command = Connection.CreateCommand();
         command.CommandText = "CREATE TABLE IF NOT EXISTS badges (badgeName TEXT NOT NULL PRIMARY KEY, badgeColor TEXT NOT NULL, bold BOOLEAN NOT NULL)";
-        command.ExecuteNonQuery();
-    }
-
-    private void CreateRankingDataTable()
-    {
-        var command = Connection.CreateCommand();
-
-        command.CommandText = "CREATE TABLE IF NOT EXISTS rankingData (id TEXT NOT NULL PRIMARY KEY, mmr INT NOT NULL, wins INT NOT NULL DEFAULT 0, totalGames INT NOT NULL DEFAULT 0, winstreak INT NOT NULL DEFAULT 0, bestWinstreak INT NOT NULL DEFAULT 0)";
         command.ExecuteNonQuery();
     }
     

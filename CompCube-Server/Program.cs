@@ -65,6 +65,7 @@ public class Program
         services.AddSingleton<MatchLog>();
         services.AddSingleton<MapData>();
         services.AddSingleton<UserData>();
+        services.AddSingleton<RankingData>();
 
         services.AddSingleton<ServerStatusManager>();
         
