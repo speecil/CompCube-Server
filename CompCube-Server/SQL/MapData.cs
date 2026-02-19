@@ -3,7 +3,7 @@ using CompCube_Server.Logging;
 
 namespace CompCube_Server.SQL;
 
-public class MapData(Logger logger) : Database
+public class MapData(Logger logger) : TableManager
 {
     protected override void CreateInitialTables()
     {

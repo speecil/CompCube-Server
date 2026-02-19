@@ -3,7 +3,7 @@ using System.Data.SQLite;
 
 namespace CompCube_Server.SQL;
 
-public abstract class Database : IDisposable
+public abstract class TableManager : IDisposable
 {
     private const string DatabaseName = "Data";
     
@@ -13,7 +13,7 @@ public abstract class Database : IDisposable
 
     public bool IsOpen => Connection.State == ConnectionState.Open;
 
-    protected Database()
+    protected TableManager()
     {
         Connection = new($"Data Source={Path.Combine(DataFolderPath, $"{DatabaseName}.db;")}");
         

@@ -5,7 +5,7 @@ using CompCube_Server.Divisions;
 
 namespace CompCube_Server.SQL;
 
-public class UserData : Database
+public class UserData : TableManager
 {
     public UserInfo? GetUserByDiscordId(string discordId)
     {
