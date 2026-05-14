@@ -44,7 +44,7 @@ public class Program
             host.UseSwaggerUI();
         }
 
-        host.UseHttpsRedirection();
+        //host.UseHttpsRedirection();
         host.MapControllers();
 
         if (_useDiscordIntegration)
